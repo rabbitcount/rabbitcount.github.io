@@ -104,6 +104,42 @@ public Launcher() {
 所谓的Parents Delegation Model其实就是一种类加载器之间的层次关系，具体的说就是它规定最顶层的类加载器必须为启动类加载器，其余的类加载器必须有自己的父类加载器，且上下层关系的加载器一般是**用组合而不是继承**来实现。
 > 某个class loader会优先委派给它的parent classloader加载类；
 
+### 双亲委派实现方式
+如果当前类加载器的父类加载器不为空，就先让父类加载器加载 `name` 对应的类，`parent` 成员变量就是第二个问题中类加载器初始化时传递的父类加载器，这就解释了 `ExtClassLoader` 的父类加载器传递的是 `null`，就会执行 `else` 的逻辑，调用 `findBootstrapClassOrNull()` ，而该方法最终为 `native` 方法 `private native Class findBootstrapClass(String name);` ，实际上就是调用openjdk中 BootStrap ClassLoader 的实现去加载该类
+
+```java
+protected Class<?> loadClass(String name, boolean resolve)
+        throws ClassNotFoundException
+    {
+    synchronized (getClassLoadingLock(name)) {
+    // First, check if the class has already been loaded
+    Class<?> c = findLoadedClass(name);
+    if (c == null) {
+      try {
+        if (parent != null) {
+          c = parent.loadClass(name, false);
+        } else {
+          c = findBootstrapClassOrNull(name);
+        }
+      } catch (ClassNotFoundException e) {
+        // ClassNotFoundException thrown if class not found
+        // from the non-null parent class loader
+      }
+
+      if (c == null) {
+        // If still not found, then invoke findClass in order
+        // to find the class.
+        c = findClass(name);
+      }
+    }
+    if (resolve) {
+      resolveClass(c);
+    }
+    return c;
+  }
+}
+```
+
 ## 组合而非继承
 > 值得注意的是图中的 ExtensionClassLoader 的 parent 指针画了虚线，这是因为它的 parent 的值是 null，当 parent 字段是 null 时就表示它的父加载器是「根加载器」。如果某个 Class 对象的 classLoader 属性值是 null，那么就表示这个类也是「根加载器」加载的。注意这里的 parent 不是 super 不是父类，只是 ClassLoader 内部的字段。
 
