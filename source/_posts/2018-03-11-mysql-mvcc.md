@@ -1,7 +1,7 @@
 ---
 title: mysql mvcc
 date: 2018-03-11 23:02:31
-tags:
+tags: mysql
 ---
 
 [mysql官方：InnoDB Multi-Versioning](https://dev.mysql.com/doc/refman/5.7/en/innodb-multi-versioning.html)
