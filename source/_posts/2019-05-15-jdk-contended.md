@@ -7,7 +7,7 @@ tags:
 - jdk
 ---
 
-# 伪共享 与 @Contended
+# 伪共享 与 Contended
 Java8使用@sun.misc.Contended避免伪共享
 
 ## 什么是伪共享
