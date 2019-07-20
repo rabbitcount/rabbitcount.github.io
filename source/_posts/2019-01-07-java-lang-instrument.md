@@ -160,20 +160,29 @@ Permissions: all-permissions
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-assembly-plugin</artifactId>
-      <configuration>
-        <archive>
-          <manifestEntries>
-            <Agent-Class>${full-path-of-Agent-class}</Agent-Class>
-            <Can-Redefine-Classes>true</Can-Redefine-Classes>
-            <Can-Retransform-Classes>true</Can-Retransform-Classes>
-            <Manifest-Version>1.0</Manifest-Version>
-            <Permissions>all-permissions</Permissions>
-          </manifestEntries>
-        </archive>
-        <descriptorRefs>
-          <descriptorRef>jar-with-dependencies</descriptorRef>
-        </descriptorRefs>
-      </configuration>
+      <executions>
+        <execution>
+          <id>make-assembly</id>
+          <phase>package</phase>
+          <goals>
+            <goal>single</goal>
+          </goals>
+          <configuration>
+            <archive>
+              <manifestEntries>
+                <Agent-Class>${full-path-of-Agent-class}</Agent-Class>
+                <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                <Manifest-Version>1.0</Manifest-Version>
+                <Permissions>all-permissions</Permissions>
+              </manifestEntries>
+            </archive>
+            <descriptorRefs>
+              <descriptorRef>jar-with-dependencies</descriptorRef>
+            </descriptorRefs>
+          </configuration>
+        </execution>
+      </executions>
     </plugin>
     <plugin>
       <groupId>org.apache.maven.plugins</groupId>
@@ -188,6 +197,7 @@ Permissions: all-permissions
 </build>
 ```
 其中 maven-compiler-plugin 的配置不是必须的，但是由于Agent需要区分1.6前或1.6后，所以建议指定jdk的版本；
+执行 `mvn clean package` 后，生成的jar包为 `\*-jar-with-dependencies.jar`
 
 ### 补充
 > The agentmain method should do any necessary initialization required to start the agent. When startup is complete the method should return. If the agent cannot be started (for example, because the agent class cannot be loaded, or because the agent class does not have a conformant agentmain method), the JVM will not abort. If the agentmain method throws an uncaught exception it will be ignored (but may be logged by the JVM for troubleshooting purposes).
