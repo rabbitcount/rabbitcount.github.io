@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="转自: It is all about the inode An inode is a data structure in UNIX operating systems that contains important information pertaining to files within a file system. When a file system is created in UNIX">
+<meta name="keywords" content="unix,inode">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Unix Inode">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/03/17/unix-inode/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="转自: It is all about the inode An inode is a data structure in UNIX operating systems that contains important information pertaining to files within a file system. When a file system is created in UNIX">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/figure1_smitty-chfs.gif">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Unix Inode">
+<meta name="twitter:description" content="转自: It is all about the inode An inode is a data structure in UNIX operating systems that contains important information pertaining to files within a file system. When a file system is created in UNIX">
+<meta name="twitter:image" content="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/figure1_smitty-chfs.gif">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/03/17/unix-inode/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Unix Inode | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/03/17/unix-inode/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Unix Inode
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-03-17 19:11:00" itemprop="dateCreated datePublished" datetime="2018-03-17T19:11:00+08:00">2018-03-17</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>转自: <span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1s" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html">It is all about the inode<i class="fa fa-external-link"></i></span></p>
+<p>An <em>inode</em> is a data structure in UNIX operating systems that contains important information pertaining to files within a file system. When a file system is created in UNIX, a set amount of inodes is created, as well. Usually, about 1 percent of the total file system disk space is allocated to the inode table.</p>
+<p>Sometimes, people interchange the terms <em>inode</em> and <em>inumber.</em> The terms are similar and do correspond to each other, but they don’t refer to the same things. <em>Inode</em> refers to the data structure; the <em>inumber</em> is actually the identification number of the inode—hence the term <em>inode number,</em> or <em>inumber.</em> The inumber is only one important item of information for a file. Some of the other attributes in an inode are discussed in the next section.</p>
+<p>The inode table contains a listing of all inode numbers for the respective file system. When users search for or access a file, the UNIX system searches through the inode table for the correct inode number. When the inode number is found, the command in question can access the inode and make the appropriate changes if applicable.</p>
+<p>Take, for example, editing a file with <code>vi</code>. When you type <code>vi &lt;filename&gt;</code>, the inode number is found in the inode table, allowing you to open the inode. Some attributes are changed during the edit session of <code>vi</code>, and when you have finished and typed <code>:wq</code>, the inode is closed and released. This way, if two users were to try to edit the same file, the inode would already have been<br>assigned to another user ID (UID) in the edit session, and the second editor would<br>have to wait for the inode to be released.</p>
+<h2 id="The-inode-structure"><a href="#The-inode-structure" class="headerlink" title="The inode structure"></a>The inode structure</h2><p>The inode structure is relatively straightforward for seasoned UNIX developers or administrators, but there may still be some surprising information you don’t already know about the insides of the inode. The following definitions provide just some of the important information contained in the inode that UNIX users employ constantly:</p>
+<ul>
+<li>Inode number</li>
+<li>Mode information to discern file type and also for the <code>stat C</code> function</li>
+<li>Number of links to the file</li>
+<li>UID of the owner</li>
+<li>Group ID (GID) of the owner</li>
+<li>Size of the file</li>
+<li>Actual number of blocks that the file uses</li>
+<li>Time last modified</li>
+<li>Time last accessed</li>
+<li>Time last changed</li>
+</ul>
+<p>Basically, the inode contains all information about a file outside of the actual name of the file and the actual data content of the file. The full inode structure can be found in the header file /usr/include/jfs/ino.h in AIX or on the Web at <span class="exturl" data-url="aHR0cDovL3B1YmxpYi5ib3VsZGVyLmlibS5jb20vaW5mb2NlbnRlci9zeXN0ZW1zL2luZGV4LmpzcD90b3BpYz0vY29tLmlibS5haXguZmlsZXMvZG9jL2FpeGZpbGVzL2lub2RlLmguaHRt" title="http://publib.boulder.ibm.com/infocenter/systems/index.jsp?topic=/com.ibm.aix.files/doc/aixfiles/inode.h.htm">http://publib.boulder.ibm.com/infocenter/systems/index.jsp?topic=/com.ibm.aix.files/doc/aixfiles/inode.h.htm<i class="fa fa-external-link"></i></span>.</p>
+<p>The information listed above is important to files and is used heavily in UNIX. Without with this information, a file would appear corrupt and unusable.</p>
+<p>Directories and files may appear different on UNIX systems compared to other operating systems, but they aren’t. In UNIX, directories are actually files that have a few additional settings in their inodes. A <em>directory</em> is basically a file containing other files. Also, the mode information has flags set to inform the system that the file is actually a directory.</p>
+<h2 id="Working-with-inodes"><a href="#Working-with-inodes" class="headerlink" title="Working with inodes"></a>Working with inodes</h2><p>Knowing how to work with inodes in UNIX can save a lot of time and frustration. You can use the following commands to alleviate some of the headaches you may have when you don’t know about inodes.</p>
+<h3 id="The-df-command"><a href="#The-df-command" class="headerlink" title="The df command"></a>The df command</h3><p>As mentioned earlier, when you create a file system in UNIX, about 1 percent of the total disk space is allocated to the inode table. Every time you create a file in the file system, an inode is allocated to the file. Typically, there is an adequate number of inodes associated with a file system, but running out of inodes is always a possibility. To monitor this, you can view the output of the <code>df</code>.</p>
+<p>Using the <code>df</code> command, you can look at all mounted file systems or specific file systems. In this view, you can see the number of inodes used already in the respective file system as well as the percentage used overall in the file system, as <span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI2xpc3Qx" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#list1">Listing 1<i class="fa fa-external-link"></i></span> shows.</p>
+<h5 id="Listing-1-Using-df-to-monitor-inode-use"><a href="#Listing-1-Using-df-to-monitor-inode-use" class="headerlink" title="Listing 1. Using df to monitor inode use"></a>Listing 1. Using df to monitor inode use</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># df -k|head -6</span><br><span class="line">Filesystem    1024-blocks      Free %Used    Iused %Iused Mounted on</span><br><span class="line">/dev/hd4           229376    138436   40%     4730    13% /</span><br><span class="line">/dev/hd2          8028160    962692   89%   110034    33% /usr</span><br><span class="line">/dev/hd9var       1835008    366400   81%    25829    24% /var</span><br><span class="line">/dev/hd3           524288    523564    1%       98     1% /tmp</span><br><span class="line">/dev/hd1            32768     32416    2%        5     1% /home</span><br></pre></td></tr></table></figure>
+<p>If for some reason a file system did reach 100 percent of its inodes used, you won’t be able to create additional files, devices, directories, and so on in the file system. One solution is to add more space to the file system through the <code>smitty chfs</code> command, as shown in <span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI2ZpZzE=" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#fig1">Figure 1<i class="fa fa-external-link"></i></span>. Another solution is to create smaller inode extents. IBM AIX 5L now allows for inode extends smaller than the default size<br>of 16KB on enhanced journal file systems. Please keep in mind, though, that if you use this option in AIX 5L, the file system will not be accessible from previous versions of AIX.</p>
+<h5 id="Figure-1-The-result-of-the-smitty-chfs-command"><a href="#Figure-1-The-result-of-the-smitty-chfs-command" class="headerlink" title="Figure 1. The result of the smitty chfs command"></a>Figure 1. The result of the smitty chfs command<img src="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/figure1_smitty-chfs.gif" alt="smitty chfs"></h5><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI04xMDBEOQ==" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#N100D9">View image at full size<i class="fa fa-external-link"></i></span></p>
+<h3 id="istat-and-stat"><a href="#istat-and-stat" class="headerlink" title="istat and stat"></a>istat and stat</h3><p>A quick way to examine an inode in AIX is by using the <code>istat</code> command. With this command, you can find the inumber of the specific file as well as other inode items like permissions; file type; UID; GID; number of links (not symbolic links); file size; and time stamps for last updated, last modified, and last accessed.</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI2xpc3Qy" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#list2">Listing 2<i class="fa fa-external-link"></i></span> shows inode information for the file /usr/bin/ksh in AIX.</p>
+<h5 id="Listing-2-Inode-information-for-usr-bin-ksh"><a href="#Listing-2-Inode-information-for-usr-bin-ksh" class="headerlink" title="Listing 2. Inode information for /usr/bin/ksh"></a>Listing 2. Inode information for /usr/bin/ksh</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># istat /usr/bin/ksh</span><br><span class="line">Inode 18150 on device 10/8      File</span><br><span class="line">Protection: r-xr-xr-x</span><br><span class="line">Owner: 2(bin)           Group: 2(bin)</span><br><span class="line">Link count:   5         Length 237804 bytes</span><br><span class="line">Last updated:   Wed Oct 24 17:37:10 EDT 2007</span><br><span class="line">Last modified:  Wed Apr 18 23:58:06 EDT 2007</span><br><span class="line">Last accessed:  Mon Apr 28 11:25:35 EDT 2008</span><br></pre></td></tr></table></figure>
+<p>In addition to showing the standard information from <code>istat</code>, you now know what the inumber is for /usr/bin/ksh. If you also find the logical volume in which the file resides, you can display even more information. One way to find this information is by looking at the mounted file system in which the file resides with the <code>df</code> command:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># df /usr/bin</span><br><span class="line">Filesystem    512-blocks      Free %Used    Iused %Iused Mounted on</span><br><span class="line">/dev/hd2        16056320   1925384   89%   110034    33% /usr</span><br></pre></td></tr></table></figure>
+<p>The file /usr/bin/ksh resides in the directory /usr/bin. Looking at the output of the <code>df</code> command, you can tell that the directory /usr/bin is contained in the /usr file system and that the /usr file system is inside the logical volume /dev/hd2. Now that you know both the inumber and the logical volume name, using <code>istat</code> with both items of information as arguments, you can determine the hexadecimal addresses of the disk blocks that make up the file, as shown in <span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI2xpc3Qz" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#list3">Listing 3<i class="fa fa-external-link"></i></span>.</p>
+<h5 id="Listing-3-Determining-the-hexadecimal-addresses-of-the-file-blocks"><a href="#Listing-3-Determining-the-hexadecimal-addresses-of-the-file-blocks" class="headerlink" title="Listing 3. Determining the hexadecimal addresses of the file blocks"></a>Listing 3. Determining the hexadecimal addresses of the file blocks</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"># istat 18150 /dev/hd2</span><br><span class="line">Inode 18150 on device 10/8      File</span><br><span class="line">Protection: r-xr-xr-x</span><br><span class="line">Owner: 2(bin)           Group: 2(bin)</span><br><span class="line">Link count:   5         Length 237804 bytes</span><br><span class="line"></span><br><span class="line">Last updated:   Wed Oct 24 17:37:10 EDT 2007</span><br><span class="line">Last modified:  Wed Apr 18 23:58:06 EDT 2007</span><br><span class="line">Last accessed:  Mon Apr 28 11:44:20 EDT 2008</span><br><span class="line"></span><br><span class="line">Block pointers (hexadecimal):</span><br><span class="line">11620     ef8c0</span><br></pre></td></tr></table></figure>
+<p>Linux has its own version of <code>istat</code>: <code>stat</code>. The Linux <code>stat</code> command shows similar information<br>and also includes some switches not available in the AIX <code>istat</code> command:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># stat /bin/bash</span><br><span class="line">  File: /bin/bash</span><br><span class="line">  Size: 722684          Blocks: 1432       IO Block: 4096   regular file</span><br><span class="line">  Device: fd00h/64768d    Inode: 12799859    Links: 1</span><br><span class="line">  Access: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)</span><br><span class="line">  Access: 2008-04-06 19:13:50.000000000 -0400</span><br><span class="line">  Modify: 2006-07-12 03:11:53.000000000 -0400</span><br><span class="line">  Change: 2007-11-22 04:05:30.000000000 -0500</span><br></pre></td></tr></table></figure>
+<h3 id="The-ls-command"><a href="#The-ls-command" class="headerlink" title="The ls command"></a>The ls command</h3><p>At one time or another in your career, you’ve had to worry about removing or managing files with dashes or other special characters in the file name or file names that appear not to have a file name at all. Most likely, someone mistakenly named the respective file.</p>
+<p>Because most commands in UNIX include switches, or options, that begin either with a hyphen (<code>-</code>) or a double hyphen (<code>--</code>), it can be difficult to manipulate these files with commonly used commands such as <code>rm</code>, <code>mv</code>, and <code>cp</code>. Thankfully, there are options in commands to show the inumber of the inode associated with the file in question. The <code>ls</code> command has such an option:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># ls</span><br><span class="line">         -      --     -p     fileA  fileB  fileC  fileD</span><br><span class="line">  fileE  fileF  fileG  fileH  fileI  fileJ  fileK  fileL`</span><br></pre></td></tr></table></figure>
+<p>Using the <code>ls -i</code> command, you can view the inumber next to the file name, as shown in <span class="exturl" data-url="aHR0cHM6Ly93d3cuaWJtLmNvbS9kZXZlbG9wZXJ3b3Jrcy9haXgvbGlicmFyeS9hdS1zcGVha2luZ3VuaXgxNC9pbmRleC5odG1sI2xpc3Q0" title="https://www.ibm.com/developerworks/aix/library/au-speakingunix14/index.html#list4">Listing 4<i class="fa fa-external-link"></i></span>. Now that you know the inumber, you can easily manipulate the file.</p>
+<h5 id="Listing-4-Viewing-the-inumber-of-the-file"><a href="#Listing-4-Viewing-the-inumber-of-the-file" class="headerlink" title="Listing 4. Viewing the inumber of the file"></a>Listing 4. Viewing the inumber of the file</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># ls –i</span><br><span class="line">38988        38991 -p     38984 fileC  38982 fileF  38977 fileI  38978 fileL</span><br><span class="line">38989 -      38980 fileA  38986 fileD  38983 fileG  38987 fileJ</span><br><span class="line">38990 --     38979 fileB  38976 fileE  38985 fileH  38981 fileK</span><br></pre></td></tr></table></figure>
+<h3 id="The-find-command"><a href="#The-find-command" class="headerlink" title="The find command"></a>The find command</h3><p>Using the UNIX <code>find</code> command, you can finish what you started with the <code>ls</code> command. Now that you know the inumber for the respective files that you must manipulate, you can start!</p>
+<p>To remove the file that looks like it has no name, simply use <code>find</code> with the <code>-inum</code> switch to locate the inumber and file. Then, when the file has been found, use <code>find</code> with the <code>-exec</code> switch to remove the file:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># find . -inum 38988 -exec rm &#123;&#125; \;</span><br></pre></td></tr></table></figure>
+<p>To rename the file, do the same again, but this time use <code>mv</code> rather than <code>rm</code>:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># find . -inum 38989 -exec mv &#123;&#125; fileM \;</span><br></pre></td></tr></table></figure></p>
+<p>To verify that you’re getting the expected results, simply use the <code>ls -i</code> command again:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># ls -i</span><br><span class="line">38990 --     38979 fileB  38976 fileE  38985 fileH  38981 fileK</span><br><span class="line">38991 -p     38984 fileC  38982 fileF  38977 fileI  38978 fileL</span><br><span class="line">38980 fileA  38986 fileD  38983 fileG  38987 fileJ  38989 fileM</span><br></pre></td></tr></table></figure>
+<h3 id="The-fsck-command"><a href="#The-fsck-command" class="headerlink" title="The fsck command"></a>The fsck command</h3><p>Unfortunately, hardware doesn’t last forever, and systems can fail over years of continued use. When this happens and the operating system shuts down abnormally because of a power failure or another issue, you may encounter files when you bring the system back up that were open during the crash and<br>now need assistance. During times like this, you may run into messages that inodes need to be repaired or that an error exists. If this happens, the <code>fsck</code> command can be a lifesaver! Rather than<br>restoring the system or even rebuilding the operating system, you can use <code>fsck</code> to repair file systems or correct damaged inodes.</p>
+<p>The following command attempts to repair the logical volume /dev/hd1:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"># fsck –p /dev/hd1 –y</span><br></pre></td></tr></table></figure></p>
+<p>By using the <code>fsck</code> command, you can narrow the search for damaged inodes, as well. If you’re searching for a specific inode, you can use the <code>-ii-NodeNumber</code> switch with <code>fsck</code>.</p>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>Files and directories would be nearly useless in UNIX without the helping hand of the inode. Hopefully, after reading this article, you understand inodes better, their importance to AIX, and also how to manage them. You may never look at <code>df</code> the same way again.</p>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/unix/" rel="tag"># unix</a>
+          
+            <a href="/tags/inode/" rel="tag"># inode</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/17/concurrent-vs-parallel/" rel="next" title="并发(concurrent) VS 并行(parallel)">
+                <i class="fa fa-chevron-left"></i> 并发(concurrent) VS 并行(parallel)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/20/distributed-transaction/" rel="prev" title="distributed transaction">
+                distributed transaction <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#The-inode-structure"><span class="nav-number">1.</span> <span class="nav-text">The inode structure</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Working-with-inodes"><span class="nav-number">2.</span> <span class="nav-text">Working with inodes</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#The-df-command"><span class="nav-number">2.1.</span> <span class="nav-text">The df command</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Listing-1-Using-df-to-monitor-inode-use"><span class="nav-number">2.1.0.1.</span> <span class="nav-text">Listing 1. Using df to monitor inode use</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Figure-1-The-result-of-the-smitty-chfs-command"><span class="nav-number">2.1.0.2.</span> <span class="nav-text">Figure 1. The result of the smitty chfs command</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#istat-and-stat"><span class="nav-number">2.2.</span> <span class="nav-text">istat and stat</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Listing-2-Inode-information-for-usr-bin-ksh"><span class="nav-number">2.2.0.1.</span> <span class="nav-text">Listing 2. Inode information for /usr/bin/ksh</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Listing-3-Determining-the-hexadecimal-addresses-of-the-file-blocks"><span class="nav-number">2.2.0.2.</span> <span class="nav-text">Listing 3. Determining the hexadecimal addresses of the file blocks</span></a></li></ol></li></ol><li class="nav-item nav-level-3"><a class="nav-link" href="#The-ls-command"><span class="nav-number">2.3.</span> <span class="nav-text">The ls command</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Listing-4-Viewing-the-inumber-of-the-file"><span class="nav-number">2.3.0.1.</span> <span class="nav-text">Listing 4. Viewing the inumber of the file</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-find-command"><span class="nav-number">2.4.</span> <span class="nav-text">The find command</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-fsck-command"><span class="nav-number">2.5.</span> <span class="nav-text">The fsck command</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">3.</span> <span class="nav-text">Conclusion</span></a></li></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="日志文件主要用于记录redo log，InnoDB采用循环使用的方式，你可以通过参数指定创建文件的个数和每个文件的大小。默认情况下，日志是以512字节的block单位写入。由于现代文件系统的block size通常设置到4k，InnoDB提供了一个选项，可以让用户将写入的redo日志填充到4KB，以避免read-modify-write的现象；而Percona Server则提供了另外一个选项，支">
+<meta name="keywords" content="myql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL undo log">
+<meta property="og:url" content="http://wiki.anocelot.cn/2019/05/09/mysql-undo-log/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="日志文件主要用于记录redo log，InnoDB采用循环使用的方式，你可以通过参数指定创建文件的个数和每个文件的大小。默认情况下，日志是以512字节的block单位写入。由于现代文件系统的block size通常设置到4k，InnoDB提供了一个选项，可以让用户将写入的redo日志填充到4KB，以避免read-modify-write的现象；而Percona Server则提供了另外一个选项，支">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL undo log">
+<meta name="twitter:description" content="日志文件主要用于记录redo log，InnoDB采用循环使用的方式，你可以通过参数指定创建文件的个数和每个文件的大小。默认情况下，日志是以512字节的block单位写入。由于现代文件系统的block size通常设置到4k，InnoDB提供了一个选项，可以让用户将写入的redo日志填充到4KB，以避免read-modify-write的现象；而Percona Server则提供了另外一个选项，支">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2019/05/09/mysql-undo-log/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>MySQL undo log | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/05/09/mysql-undo-log/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL undo log
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-05-09 11:15:21" itemprop="dateCreated datePublished" datetime="2019-05-09T11:15:21+08:00">2019-05-09</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>日志文件主要用于记录redo log，InnoDB采用循环使用的方式，你可以通过参数指定创建文件的个数和每个文件的大小。默认情况下，日志是以512字节的block单位写入。由于现代文件系统的block size通常设置到4k，InnoDB提供了一个选项，可以让用户将写入的redo日志填充到4KB，以避免read-modify-write的现象；而Percona Server则提供了另外一个选项，支持直接将redo日志的block size修改成指定的值。</p>
+<p>从上层的角度来看，InnoDB层的文件，除了redo日志外，基本上具有相当统一的结构，都是固定block大小，普遍使用的btree结构来管理数据。只是针对不同的block的应用场景会分配不同的页类型。通常默认情况下，每个block的大小为 UNIV_PAGE_SIZE，在不做任何配置时值为16kb</p>
+<p>作用：<br>　　保存了事务发生之前的数据的一个版本，可以用于回滚，同时可以提供多版本并发控制下的读（MVCC），也即非锁定读<br>内容：<br>　　逻辑格式的日志，在执行undo的时候，仅仅是将数据从逻辑上恢复至事务之前的状态，而不是从物理页面上操作实现的，这一点是不同于redo log的。<br>什么时候产生：<br>　　事务开始之前，将当前是的版本生成undo log，undo 也会产生 redo 来保证undo log的可靠性<br>什么时候释放：<br>　　当事务提交之后，undo log并不能立马被删除，<br>　　而是放入待清理的链表，由purge线程判断是否由其他事务在使用undo段中表的上一个事务之前的版本信息，决定是否可以清理undo log的日志空间。</p>
+<p>查询表空间使用情况</p>
+<blockquote>
+<p>show variables like ‘%innodb_data_file_path%’</p>
+</blockquote>
+<h1 id="Undo-log-回滚日志"><a href="#Undo-log-回滚日志" class="headerlink" title="Undo log (回滚日志)"></a>Undo log (回滚日志)</h1><p><code>Undo log</code> 是 <code>InnoDB MVCC</code> 事务特性的重要组成部分。<br><code>Undo log</code> 中保存用于实现 InnoDB 中的事务回滚；<br>对记录做了变更操作时就会产生 <code>undo</code> 记录，<code>Undo</code> 记录默认被记录到系统表空间(<code>ibdata</code>)中，但从5.6开始，也可以使用独立的 <code>Undo</code> 表空间。<br><code>Undo log</code> = <code>undo log records</code>(对应一个事务) * N</p>
+<h2 id="何时记录-Undo-log"><a href="#何时记录-Undo-log" class="headerlink" title="何时记录 Undo log"></a>何时记录 Undo log</h2><ul>
+<li>INSERT<br>在事务提交前只对当前事务可见，因此产生的Undo日志可以在事务提交后直接删除</li>
+<li>DELETE \ UPDATE<br>需要维护多版本信息<br>在 InnoDB 里，UPDATE 和 DELETE 操作产生的 Undo日志 被归成一类，即 <code>update_undo</code></li>
+</ul>
+<p>数据修改时，需要同时记录 redo log 和 undo log；如果因为某些原因导致事务失败或回滚了，可以借助该undo进行回滚；<br><code>undo log</code> 和 <code>redo log</code> 记录物理日志不一样，它是逻辑日志。<br>可以认为：</p>
+<ol>
+<li>当 delete 一条记录时，<code>undo log</code> 中会记录一条对应的insert记录，反之亦然；</li>
+<li>当 update 一条记录时，它记录一条对应<strong>相反</strong>的 update 记录。</li>
+</ol>
+<h2 id="Undo-log-中记录什么"><a href="#Undo-log-中记录什么" class="headerlink" title="Undo log 中记录什么"></a>Undo log 中记录什么</h2><blockquote>
+<p>存储了老版本的数据，可能包含多个版本的历史数据；<br>An undo log record contains information about how to undo the latest change by a transaction to a clustered index record.</p>
+</blockquote>
+<p>当一个旧的事务需要读取数据时，为了能读取到老版本的数据，需要顺着undo链找到满足其可见性的记录</p>
+<h2 id="关联"><a href="#关联" class="headerlink" title="关联"></a>关联</h2><ul>
+<li>128 个 rollback segment</li>
+<li>一个 rollback segment 有 1024 个 undo slot；</li>
+<li>一个 undo slot 对应一个 undo log</li>
+<li>一个 事务(dml) 对应一个 undo log</li>
+</ul>
+<h2 id="InnoDB-最大支持多少个普通事务（user-defined）"><a href="#InnoDB-最大支持多少个普通事务（user-defined）" class="headerlink" title="InnoDB 最大支持多少个普通事务（user defined）"></a>InnoDB 最大支持多少个普通事务（user defined）</h2><ul>
+<li>一个事务仅含 insert 或 update/delete<blockquote>
+<p><strong>( innodb_page_size / 16 ) * <em>innodb_rollback_segments</em> * number of undo tablespaces</strong></p>
+</blockquote>
+</li>
+<li>一个事务 含 一个insert 或 一个update\delete<blockquote>
+<p><strong>( innodb_page_size / 16 / 2 ) * innodb_rollback_segments * number of undo tablespaces</strong></p>
+</blockquote>
+</li>
+<li>一个事务在临时表空间执行 insert<blockquote>
+<p><strong>( innodb_page_size / 16 ) * innodb_rollback_segments</strong></p>
+</blockquote>
+</li>
+<li>一个事务在临时表空间 执行insert 且 update\delete<blockquote>
+<p><strong>( innodb_page_size / 16 / 2 ) * innodb_rollback_segments</strong></p>
+</blockquote>
+</li>
+</ul>
+<h3 id="支持事务数量调整"><a href="#支持事务数量调整" class="headerlink" title="支持事务数量调整"></a>支持事务数量调整</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kZXYubXlzcWwuY29tL2RvYy9yZWZtYW4vNS41L2VuL2lubm9kYi11bmRvLWxvZ3MuaHRtbA==" title="https://dev.mysql.com/doc/refman/5.5/en/innodb-undo-logs.html">5.5 支持事务数量<i class="fa fa-external-link"></i></span>：5.1+版本，<code>1024 * innodb_rollback_segments</code><br><span class="exturl" data-url="aHR0cHM6Ly9kZXYubXlzcWwuY29tL2RvYy9yZWZtYW4vOC4wL2VuL2lubm9kYi11bmRvLWxvZ3MuaHRtbA==" title="https://dev.mysql.com/doc/refman/8.0/en/innodb-undo-logs.html">8.0 支持事务数量<i class="fa fa-external-link"></i></span>：5.6+版本，增加配置参数 <code>number of undo tablespaces</code></p>
+<blockquote>
+<p>In MySQL 5.6 and MySQL 5.7, the number of undo tablespaces is controlled by the innodb_undo_tablespaces configuration option. In MySQL 8.0, two default undo tablespaces are created when the MySQL instance is initialized, and additional undo tablespaces can be created using CREATE UNDO TABLESPACE syntax.</p>
+</blockquote>
+<h1 id="基本文件结构"><a href="#基本文件结构" class="headerlink" title="基本文件结构"></a>基本文件结构</h1><p>undo tablesapce \ global temporary tablespace (used for transactions that modify data in user-defined temporary tables)<br>–&gt; rollback segment<br>—-&gt; undo log segment<br>——&gt; undo log<br>——–&gt; undo log record</p>
+<p><strong>rseg</strong>（ rollback segment ）: 回滚段</p>
+<ul>
+<li>rseg0：预留在系统表空间ibdata中;</li>
+<li>rseg1 - rseg32：这32个回滚段存放于临时表的系统表空间中;</li>
+<li>rseg33 - rseg127: 则根据配置存放到独立undo表空间中（如果没有打开独立Undo表空间，则存放于ibdata中）</li>
+</ul>
+<h2 id="如何实现并发写入"><a href="#如何实现并发写入" class="headerlink" title="如何实现并发写入"></a>如何实现并发写入</h2><h1 id="执行流程"><a href="#执行流程" class="headerlink" title="执行流程"></a>执行流程</h1><h2 id="创建-undo-物理表空间"><a href="#创建-undo-物理表空间" class="headerlink" title="创建 undo 物理表空间"></a>创建 undo 物理表空间</h2><blockquote>
+<p>srv_undo_tablespaces_init</p>
+</blockquote>
+<ol>
+<li>根据 <code>innodb_undo_tablespaces</code> 参数，调用 <code>srv_undo_tablespace_create</code> 创建默认大小为 10M 的文件；</li>
+</ol>
+<ul>
+<li>分别对 <code>undo tablespace</code> 调用 <code>srv_undo_tablespace_open</code>；主要调用<code>fil_space_create</code> 和 <code>fil_node_create</code> 将新建立的 <code>undo tablespace</code> 加入 Innodb 的文件体系；</li>
+<li>对 <code>undo tablespace</code> 进行 fsp_header 的初始化<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">mlog_write_ulint(header + FSP_SPACE_ID, space_id, MLOG_4BYTES, mtr);</span><br><span class="line">mlog_write_ulint(header + FSP_NOT_USED, 0, MLOG_4BYTES, mtr);</span><br><span class="line"></span><br><span class="line">mlog_write_ulint(header + FSP_SIZE, size, MLOG_4BYTES, mtr);</span><br><span class="line">mlog_write_ulint(header + FSP_FREE_LIMIT, 0, MLOG_4BYTES, mtr);</span><br><span class="line">mlog_write_ulint(header + FSP_SPACE_FLAGS, space-&gt;flags,</span><br><span class="line">         MLOG_4BYTES, mtr);</span><br><span class="line">mlog_write_ulint(header + FSP_FRAG_N_USED, 0, MLOG_4BYTES, mtr);</span><br><span class="line"></span><br><span class="line">flst_init(header + FSP_FREE, mtr);</span><br><span class="line">flst_init(header + FSP_FREE_FRAG, mtr);</span><br><span class="line">flst_init(header + FSP_FULL_FRAG, mtr);</span><br><span class="line">flst_init(header + FSP_SEG_INODES_FULL, mtr);</span><br><span class="line">flst_init(header + FSP_SEG_INODES_FREE, mtr);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>生成了 <code>n_undo_tablespaces</code> 个大小为10MB的 <code>undo tablespace</code> 文件，并且已经加入到 innoDB 文件体系，但是里面没有任何类容。</p>
+<h2 id="ibdata中system-segment-header的初始化"><a href="#ibdata中system-segment-header的初始化" class="headerlink" title="ibdata中system segment header的初始化"></a>ibdata中system segment header的初始化</h2><p>调用 <code>trx_sys_create_sys_pages-&gt;trx_sysf_create</code> 进行，除初始化<code>transaction system segment</code> 外还会初始化其 <code>header( ibdata page no 5)</code> 信息；<br>老版本代码中，TRX_SYS_OLD_N_RSEGS=256，实际只会有128个，<br>rollback segment slots 都初始化完成(源码所示有256个，实际上最多只会有128个，其中0号solt固定在ibdata中)</p>
+<p>slot 大小是TRX_SYS_RSEG_SLOT_SIZE设置的大小为8字节，4字节space id ,4字节 page no，它们会指向 rollback segment header所在的位置<br>TRX_SYS_TRX_ID_STORE<br>TRX_SYS_FSEG_HEADER<br>TRX_SYS_RSEGS</p>
+<h2 id="rollback-segment-header-初始化"><a href="#rollback-segment-header-初始化" class="headerlink" title="rollback segment header 初始化"></a>rollback segment header 初始化</h2><p>调用 trx_sys_create_rsegs进行；</p>
+<p>关于innodb_undo_logs参数和innodb_rollback_segments参数，他们作用就是设置rollback segment 的个数，本文以128为例。</p>
+<p>根据注释和代码innodb_undo_logs已经是个淘汰的参数，应该用innodb_rollback_segments代替。<br>这两个参数默认是就是TRX_SYS_N_RSEGS及 128 其实不用设置的</p>
+<ol>
+<li><p>初始化rollback segments 段</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">n_noredo_created = trx_sys_create_noredo_rsegs(n_tmp_rsegs); </span><br><span class="line">//创建 32个 临时rollback segments</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>建立 95个(33-128) 普通rollback segments<br>是 <code>i % n_spaces</code> 的取模方式 <code>n_spaces</code> 为 <code>innodb_undo_tablespaces</code> 参数设置的值，因此每个 <code>rollback segment</code> 是轮序的方式分布到不同的 <code>undo tablespace</code> 中的。</p>
+</li>
+<li><p>rollback segment header初始化过程<br>建立rollback segment</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">block = fseg_create(space, 0, TRX_RSEG + TRX_RSEG_FSEG_HEADER, mtr); </span><br><span class="line">//建立一个回滚段，返回段头所在的块</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>初始化TRX_RSEG_MAX_SIZE和TRX_RSEG_HISTORY_SIZE信息<br>初始化每个undo segment header所在的page no；</p>
+<h1 id="相关参数"><a href="#相关参数" class="headerlink" title="相关参数"></a>相关参数</h1><h2 id="innodb-rollback-segments"><a href="#innodb-rollback-segments" class="headerlink" title="innodb_rollback_segments"></a>innodb_rollback_segments</h2><blockquote>
+<p>每个 <code>undo tablespace</code> 和 <code>global temporary tablespace</code> 分别支持 128 个<code>rollback segment</code><br>Each undo tablespace and the global temporary tablespace individually support a maximum of 128 rollback segments. The innodb_rollback_segments variable defines the number of rollback segments.</p>
+</blockquote>
+<h2 id="innodb-undo-tablespaces"><a href="#innodb-undo-tablespaces" class="headerlink" title="innodb_undo_tablespaces"></a>innodb_undo_tablespaces</h2><p><span class="exturl" data-url="aHR0cHM6Ly9kZXYubXlzcWwuY29tL2RvYy9yZWZtYW4vOC4wL2VuL2lubm9kYi1wYXJhbWV0ZXJzLmh0bWwjc3lzdmFyX2lubm9kYl91bmRvX3RhYmxlc3BhY2Vz" title="https://dev.mysql.com/doc/refman/8.0/en/innodb-parameters.html#sysvar_innodb_undo_tablespaces">innodb_undo_tablespaces<i class="fa fa-external-link"></i></span></p>
+<h2 id="innodb-page-size"><a href="#innodb-page-size" class="headerlink" title="innodb_page_size"></a>innodb_page_size</h2><h1 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h1><h2 id="什么是-purge"><a href="#什么是-purge" class="headerlink" title="什么是 purge"></a>什么是 purge</h2><p>1 delete语句操作的后，只会对其进行delete mark，这些被标记为删除的记录只能通过purge来进行物理的删除，但是并不回收空间<br>2 undo log，如果undo 没有任何事务再引用，那么也只能通过purge线程来进行物理的删除，但是并不回收空间</p>
+<h2 id="purge后空间就释放了吗"><a href="#purge后空间就释放了吗" class="headerlink" title="purge后空间就释放了吗"></a>purge后空间就释放了吗</h2><p>1 undo page里面可以存放多个undo log日志<br>2 只有当undo page里面的所有undo log日志都被purge掉之后，这个页的空间才可能被释放掉，否则这些undo page可以被重用</p>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/myql/" rel="tag"># myql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/09/mysql-redo-log/" rel="next" title="MySQL redo log">
+                <i class="fa fa-chevron-left"></i> MySQL redo log
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/05/15/disruptor/" rel="prev" title="Disruptor 高并发处理框架？？">
+                Disruptor 高并发处理框架？？ <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Undo-log-回滚日志"><span class="nav-number">1.</span> <span class="nav-text">Undo log (回滚日志)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#何时记录-Undo-log"><span class="nav-number">1.1.</span> <span class="nav-text">何时记录 Undo log</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Undo-log-中记录什么"><span class="nav-number">1.2.</span> <span class="nav-text">Undo log 中记录什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#关联"><span class="nav-number">1.3.</span> <span class="nav-text">关联</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#InnoDB-最大支持多少个普通事务（user-defined）"><span class="nav-number">1.4.</span> <span class="nav-text">InnoDB 最大支持多少个普通事务（user defined）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#支持事务数量调整"><span class="nav-number">1.4.1.</span> <span class="nav-text">支持事务数量调整</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#基本文件结构"><span class="nav-number">2.</span> <span class="nav-text">基本文件结构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#如何实现并发写入"><span class="nav-number">2.1.</span> <span class="nav-text">如何实现并发写入</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#执行流程"><span class="nav-number">3.</span> <span class="nav-text">执行流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建-undo-物理表空间"><span class="nav-number">3.1.</span> <span class="nav-text">创建 undo 物理表空间</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ibdata中system-segment-header的初始化"><span class="nav-number">3.2.</span> <span class="nav-text">ibdata中system segment header的初始化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollback-segment-header-初始化"><span class="nav-number">3.3.</span> <span class="nav-text">rollback segment header 初始化</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#相关参数"><span class="nav-number">4.</span> <span class="nav-text">相关参数</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#innodb-rollback-segments"><span class="nav-number">4.1.</span> <span class="nav-text">innodb_rollback_segments</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#innodb-undo-tablespaces"><span class="nav-number">4.2.</span> <span class="nav-text">innodb_undo_tablespaces</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#innodb-page-size"><span class="nav-number">4.3.</span> <span class="nav-text">innodb_page_size</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#问题"><span class="nav-number">5.</span> <span class="nav-text">问题</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是-purge"><span class="nav-number">5.1.</span> <span class="nav-text">什么是 purge</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#purge后空间就释放了吗"><span class="nav-number">5.2.</span> <span class="nav-text">purge后空间就释放了吗</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

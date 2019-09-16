@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Servlet没有main方法，它们受控于容器；服务器不是将请求交给servlet本身，而是交给部署该servlet的容器，由容器向servlet提供HTTP请求和响应，由容器调用servlet的方法，如doPost()何doGet()。 servlet交互流程 用户点击一个链接，请求指向一个servlet（ HttpServlet ）； 容器创建 HttpServletRequest和HttpS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="servlet基础">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/02/28/servlet/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="Servlet没有main方法，它们受控于容器；服务器不是将请求交给servlet本身，而是交给部署该servlet的容器，由容器向servlet提供HTTP请求和响应，由容器调用servlet的方法，如doPost()何doGet()。 servlet交互流程 用户点击一个链接，请求指向一个servlet（ HttpServlet ）； 容器创建 HttpServletRequest和HttpS">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="servlet基础">
+<meta name="twitter:description" content="Servlet没有main方法，它们受控于容器；服务器不是将请求交给servlet本身，而是交给部署该servlet的容器，由容器向servlet提供HTTP请求和响应，由容器调用servlet的方法，如doPost()何doGet()。 servlet交互流程 用户点击一个链接，请求指向一个servlet（ HttpServlet ）； 容器创建 HttpServletRequest和HttpS">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/02/28/servlet/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>servlet基础 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/02/28/servlet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">servlet基础
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-02-28 20:47:14" itemprop="dateCreated datePublished" datetime="2018-02-28T20:47:14+08:00">2018-02-28</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Servlet没有main方法，它们受控于容器；<br>服务器不是将请求交给servlet本身，而是交给部署该servlet的容器，由容器向servlet提供HTTP请求和响应，由容器调用servlet的方法，如doPost()何doGet()。</p>
+<h1 id="servlet交互流程"><a href="#servlet交互流程" class="headerlink" title="servlet交互流程"></a>servlet交互流程</h1><ul>
+<li>用户点击一个链接，请求指向一个servlet（ HttpServlet ）；</li>
+<li>容器创建 HttpServletRequest和HttpServletResponse;</li>
+<li>容器根据请求中的url，找到正确的servlet，为这个请求创建或分配一个线程。并将HttpServletRequest和HttpServletResponse对象传递给这个线程；</li>
+<li>容易调用servlet的service()方法，根据请求的不同类型。service()方法调用doGet()、doPost()或其他方法；</li>
+<li>doGet()方法生成动态页面，并把这个页面“填入”响应对象（容器还有响应对象的一个引用）。</li>
+<li>线程结束，容器把响应对象转换为一个HTTP响应，返回客户。删除请求和响应对象</li>
+</ul>
+<h1 id="web-xml"><a href="#web-xml" class="headerlink" title="web.xml"></a>web.xml</h1><p>容器读取web.xml（部署描述文件DD，位于WEB-INF文件夹中）中的servlet</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">web.xml</span><br><span class="line">&lt;web-app...&gt;</span><br><span class="line">  &lt;servlet&gt;</span><br><span class="line">    &lt;servlet-name&gt;demo class name&lt;/servlet-name&gt;</span><br><span class="line">    &lt;servlet-class&gt;demoClass&lt;/servlet-class&gt;</span><br><span class="line">  &lt;/servlet&gt;</span><br><span class="line"></span><br><span class="line">  &lt;servlet-mapping&gt;</span><br><span class="line">    &lt;servlet-name&gt;demo class name&lt;/servlet-name&gt;</span><br><span class="line">    &lt;url-pattern&gt;/matchUrl&lt;/url-pattern&gt;</span><br><span class="line">  &lt;/servlet-mapping&gt;</span><br><span class="line">&lt;/web-app&gt;</span><br></pre></td></tr></table></figure>
+<h1 id="servlet线程安全"><a href="#servlet线程安全" class="headerlink" title="servlet线程安全"></a>servlet线程安全</h1><p><strong>容器运行多个线程，处理对一个servlet的多个请求</strong><br>对应每个请求会生成一对请求和响应对象</p>
+<h1 id="servlet生命周期"><a href="#servlet生命周期" class="headerlink" title="servlet生命周期"></a>servlet生命周期</h1><ul>
+<li>构造函数init()</li>
+<li>运行中service()</li>
+<li>销毁destory()</li>
+</ul>
+<h2 id="servlet-初始化参数"><a href="#servlet-初始化参数" class="headerlink" title="servlet 初始化参数"></a>servlet 初始化参数</h2><p><font color="#0099ff"><strong>servlet初始化参数只能读一次</strong></font><br>容器建立servlet时，会读DD（web.xml），并为ServletConfig创建名/值对。此后容器不会再读初始化参数！<br>一旦参数置于ServletConfig中，就不会再读了，除非重新部署Servlet。</p>
+<blockquote>
+<p>初始化参数位于<code>ServletConfig</code>中 -&gt; 构造<code>javax.servlet.HttpServlet</code>通过调用<code>init(servletConfig)</code>方法，其中参数为<code>javax.servlet.ServletConfig</code></p>
+</blockquote>
+<p>DD文件（web.xml）中，<code>&lt;web-app&gt;</code> - <code>&lt;servlet&gt;</code> - <code>&lt;init-param&gt;</code>，配置初始化参数 ：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;servlet&gt;</span><br><span class="line">  &lt;servlet-name&gt;···&lt;servlet-name&gt;</span><br><span class="line">  &lt;servlet-class&gt;···&lt;/servlet-name&gt;</span><br><span class="line"></span><br><span class="line">  &lt;init-param&gt;</span><br><span class="line">    &lt;param-name&gt;propertyName&lt;/param-name&gt;</span><br><span class="line">    &lt;param-value&gt;propertyValue&lt;/param-value&gt;</span><br><span class="line">  &lt;/init-param&gt;</span><br><span class="line">&lt;/servlet&gt;</span><br></pre></td></tr></table></figure>
+<p>servlet代码中获取方式 <code>extends HttpServlet</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">getServletConfig().getInitParameter(&quot;propertyName&quot;);</span><br></pre></td></tr></table></figure></p>
+<h2 id="servlet-初始化顺序"><a href="#servlet-初始化顺序" class="headerlink" title="servlet 初始化顺序"></a>servlet 初始化顺序</h2><blockquote>
+<p>如果希望在部署（或服务器重启时）加载servlet，而不是等到第一个请求到来时才加载，可以在DD中使用<code>&lt;load-on-startup&gt;</code>元素。<br>    通过将<code>&lt;load-on-startup&gt;</code>的值设置为非负（ ≥ 0 ）</p>
+</blockquote>
+<ul>
+<li>servlet默认加载顺序为DD文件（web.xml）中的配置熟悉怒</li>
+<li>数值越大，加载时序越低（如果一个servlet的加载顺序设置为4，表示这个servlet应当在值小于4的其他servlet加载后再加载）</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;servlet&gt;</span><br><span class="line">  ...</span><br><span class="line">  ...</span><br><span class="line">  &lt;load-on-startup&gt;1&lt;/load-on-startup&gt;</span><br><span class="line">&lt;/servlet&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="servlet-上下文初始化参数"><a href="#servlet-上下文初始化参数" class="headerlink" title="servlet 上下文初始化参数"></a>servlet 上下文初始化参数</h2><blockquote>
+<p>如果必须同步修改ServletContext中属性，可以通过对ServletContext加锁：<code>synchronized(getServletContext()) { ... }</code></p>
+</blockquote>
+<p>context-param是针对整个应用的，所以不前套在<code>servlet</code>中</p>
+<p>DD文件（web.xml）中，<code>&lt;web-app&gt;</code> - <code>&lt;context-param&gt;</code>，配置初始化参数 ：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;context-param&gt;</span><br><span class="line">  &lt;param-name&gt;contextProperty&lt;/param-name&gt;</span><br><span class="line">  &lt;param-value&gt;contextPropertyValue&lt;/param-value&gt;</span><br><span class="line">&lt;/context-param&gt;</span><br></pre></td></tr></table></figure></p>
+<p>servlet代码中的获取方式 <code>extends HttpServlet</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">getServletContext().getInitParameter(&quot;contextProperty&quot;);</span><br></pre></td></tr></table></figure></p>
+<h1 id="ServletConfig-vs-ServletCotext"><a href="#ServletConfig-vs-ServletCotext" class="headerlink" title="ServletConfig vs ServletCotext"></a>ServletConfig vs ServletCotext</h1><ol>
+<li><code>ServletConfig</code>：servlet的一些配置属性，如servlet的初始化参数；用于访问<code>ServletContext</code>；<code>HttpServlet</code>的子类可以通过<code>getServletConfig</code>获取<code>ServletConfig</code></li>
+<li><code>ServletContext</code>：更适合叫做AppContext，每个web应用只有一个<code>ServletContext</code>，用于访问web应用参数</li>
+</ol>
+<p>每个Servlet有一个对应的<code>ServletConfig</code>；<br>每个应用有一个<code>ServletContext</code></p>
+<h2 id="监听ServletContext的创建和销毁-ServletContextListener（上下文作用域不是线程安全的）"><a href="#监听ServletContext的创建和销毁-ServletContextListener（上下文作用域不是线程安全的）" class="headerlink" title="监听ServletContext的创建和销毁 - ServletContextListener（上下文作用域不是线程安全的）"></a>监听<code>ServletContext</code>的创建和销毁 - <code>ServletContextListener</code>（<strong>上下文作用域不是线程安全的</strong>）</h2><p><code>ServletContextListener</code>.<code>contextInitialized(ServletContextEvent)</code><br><code>ServletContextListener</code>.<code>contextDestroyed(ServletContextEvent)</code></p>
+<p>实现<code>ServletContextListener</code>接口<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public class MyServletContextListener implements ServletContextListener &#123; ... &#125;</span><br></pre></td></tr></table></figure></p>
+<p>xml配置方式<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&lt;listener&gt;</span><br><span class="line">  &lt;listener-class&gt;com.example.MyServletContextListener&lt;/listener-class&gt;</span><br><span class="line">&lt;/listener&gt;</span><br></pre></td></tr></table></figure></p>
+<h3 id="servlet-8个监听器"><a href="#servlet-8个监听器" class="headerlink" title="servlet 8个监听器"></a>servlet 8个监听器</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>listener</th>
+<th>事件类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>希望知道一个Web应用上下文中是否增加、删除或替换一个属性</td>
+<td>ServletContextAttributeListener</td>
+<td>ServletContextAttributeEvent</td>
+</tr>
+<tr>
+<td>了解有多少并发用户</td>
+<td>HttpSessionListener</td>
+<td>HttpSessionEvent                  </td>
+</tr>
+<tr>
+<td>了解请求到达，比如需要建立记录日志</td>
+<td>ServletRequestListener</td>
+<td>ServletRequestEvent               </td>
+</tr>
+<tr>
+<td>希望了解增加、删除或替换一个请求属性</td>
+<td>ServletRequestAttributeListener</td>
+<td>ServletRequestAttributeEvent</td>
+</tr>
+<tr>
+<td>有一个属性类（这个类表示的对象将放在一个属性中），希望这个类型的对象在绑定到一个会话或从会话删除时得到通知</td>
+<td>HttpSessionBindingListener</td>
+<td>HttpSessionBindingEvent</td>
+</tr>
+<tr>
+<td>希望了解增加、删除或替换一个会话属性</td>
+<td>HttpSessionAttributeListener</td>
+<td>HttpSessionBindingEvent           </td>
+</tr>
+<tr>
+<td>了解是否创建或撤销一个上下文</td>
+<td>ServletContextListener</td>
+<td>ServletContextEvent               </td>
+</tr>
+<tr>
+<td>有一个属性类，并希望这个类型的对象在其绑定的会话迁移到另一个JVM时，得到通知</td>
+<td>HttpSessionActivationListener</td>
+<td>HttpSessionEvent <strong>不是HttpSessionActivationEvent</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="HttpSessionAttributeListener-vs-HttpSessionBindingListener"><a href="#HttpSessionAttributeListener-vs-HttpSessionBindingListener" class="headerlink" title="HttpSessionAttributeListener vs HttpSessionBindingListener"></a><code>HttpSessionAttributeListener</code> vs <code>HttpSessionBindingListener</code></h3><ul>
+<li><code>HttpSessionAttributeListener</code>：希望绘画中在增加、删除或替换某种类型的属性时能够知晓；</li>
+<li><code>HttpSessionBindingListener</code>：有了HttpSessionBindingListener，属性本身才能够在增加到一个会话或者从会话删除时得到通知；<br>  <code>HttpSessionBindingListener</code>.<code>valueBound(HttpSessionBindingEvent)</code><br>  <code>HttpSessionBindingListener</code>.<code>valueUnbound(HttpSessionBindingEvent)</code></li>
+</ul>
+<h2 id="一些概念"><a href="#一些概念" class="headerlink" title="一些概念"></a>一些概念</h2><ul>
+<li>上下文：ServletContext</li>
+<li>请求：ServletRequest</li>
+<li>会话：HttpSession</li>
+</ul>
+<h2 id="RequestDispatcher"><a href="#RequestDispatcher" class="headerlink" title="RequestDispatcher"></a>RequestDispatcher</h2><p>让组件的其他部分接管这个请求；通过<code>ServletContext</code>获取<code>RequestDispatcher</code></p>
+<p><code>RequestDispatcher</code>.<code>forward()</code><br><code>RequestDispatcher</code>.<code>include()</code></p>
+<h1 id="servlet重定向"><a href="#servlet重定向" class="headerlink" title="servlet重定向"></a>servlet重定向</h1><p>sendRedirect</p>
+<h1 id="拦截器-filter"><a href="#拦截器-filter" class="headerlink" title="拦截器 filter"></a>拦截器 filter</h1><blockquote>
+<p><code>javax.servlet.Filter</code><br>允许拦截请求，并且servlet对此一无所知；发生在调用servlet的service方法之前；</p>
+</blockquote>
+<ul>
+<li>容器知道过滤器API：<code>javax.servlet.Filter</code></li>
+<li>容器管理过滤器的生命周期</li>
+<li>都在DD中声明</li>
+</ul>
+<h2 id="拦截器Filter生命周期"><a href="#拦截器Filter生命周期" class="headerlink" title="拦截器Filter生命周期"></a>拦截器Filter生命周期</h2><p>拥有类似于servlet的init()和destory()方法，init的传入参数为FilterConfig，对应于servlet的doGet()和doPost()，过滤器有doFilter()方法 </p>
+<ul>
+<li><code>init(FilterConfig)</code>：初始化Filter</li>
+<li><code>doFilter()</code>完成所有工作，参数为：<br>  1) <code>ServletRequest</code>，而非<code>HttpServletRequest</code><br>  2) <code>ServletResponse</code>，而非<code>HttpServletResponse</code><br>  3) 一个<code>FilterChain</code></li>
+<li><code>destory()</code> 完成Filter的销毁</li>
+</ul>
+<h2 id="Filter声明方式"><a href="#Filter声明方式" class="headerlink" title="Filter声明方式"></a>Filter声明方式</h2><h3 id="声明Filter"><a href="#声明Filter" class="headerlink" title="声明Filter"></a>声明Filter</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&lt;filter&gt;</span><br><span class="line">  &lt;filter-name&gt;filterName&lt;/filter-name&gt;</span><br><span class="line">  &lt;filter-class&gt;filterClass&lt;/filter-class&gt;</span><br><span class="line">  &lt;init-param&gt;</span><br><span class="line">    &lt;param-name&gt;filterInitParamName&lt;/param-name&gt;</span><br><span class="line">    &lt;param-value&gt;filterInitParamValue&lt;/param-value&gt;</span><br><span class="line">  &lt;/init-param&gt;</span><br><span class="line">&lt;/filter&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="filter-mapping"><a href="#filter-mapping" class="headerlink" title="filter-mapping"></a>filter-mapping</h3><p><code>&lt;url-pattern&gt;</code>或<code>&lt;servlet-name&gt;</code>元素必须二选一</p>
+<h4 id="声明对应URL模式的过滤器映射"><a href="#声明对应URL模式的过滤器映射" class="headerlink" title="声明对应URL模式的过滤器映射"></a>声明对应URL模式的过滤器映射</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;filter-mapping&gt;</span><br><span class="line">  &lt;filter-name&gt;filterName&lt;/filter-name&gt;</span><br><span class="line">  &lt;url-pattern&gt;*.filterUrlPattern&lt;/url-pattern&gt;</span><br><span class="line">&lt;/filter-mapping&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="声明对应Servlet名的过滤器映射"><a href="#声明对应Servlet名的过滤器映射" class="headerlink" title="声明对应Servlet名的过滤器映射"></a>声明对应Servlet名的过滤器映射</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;filter-mapping&gt;</span><br><span class="line">  &lt;filter-name&gt;filterName&lt;/filter-name&gt;</span><br><span class="line">  &lt;servlet-name&gt;servletName&lt;/servlet-name&gt;</span><br><span class="line">&lt;/filter-mapping&gt;</span><br></pre></td></tr></table></figure>
+<h1 id="Servlet-包装器-Wrapper"><a href="#Servlet-包装器-Wrapper" class="headerlink" title="Servlet 包装器 - *Wrapper"></a>Servlet 包装器 - <code>*Wrapper</code></h1><p><strong>一个使用场景</strong><br>需要对所有返回值response进行压缩；</p>
+<p>当我们有操作request或response的需求时，可以增加一个Filter，并在执行过程中，将request或response替换为包装类（Wrapper），实现功能的修改</p>
+<blockquote>
+<p><strong>[容器]</strong> -&gt; doFilter(req, resp) -&gt; <strong>[Filter.filter()]</strong> -&gt; chain.doFilter(req, respWrapper) -&gt; <strong>[Servlet]</strong></p>
+</blockquote>
+<p>包装类的优势<br>自定义ServletRequest, ServletResponse需要实现过多细节，而预定义的Wrapper刚好解决了这个问题，我们只需要覆写所需的方法；</p>
+<p>servlet预提供的wrapper</p>
+<ul>
+<li><code>ServletRequestWrapper</code></li>
+<li><code>HttpServletRequestWrapper</code></li>
+<li><code>ServletResponseWrapper</code></li>
+<li><code>HttpServletResponseWrapper</code></li>
+</ul>
+<h2 id="压缩返回值的🌰"><a href="#压缩返回值的🌰" class="headerlink" title="压缩返回值的🌰"></a>压缩返回值的🌰</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">class CompressionResponseWrapper extends HttpServletResponseWrapper &#123;</span><br><span class="line">  // 覆盖想定制的方法，对返回流进行压缩</span><br><span class="line">  public ServletOutputStream getOutputStream() throws ... &#123;</span><br><span class="line">  	...</span><br><span class="line">  	return new GzipSos(resp.getOutputStream());</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">class MyCompressionFilter implements Filter &#123;</span><br><span class="line"></span><br><span class="line">  public void init(FilterConfig cfg) &#123; ... &#125;</span><br><span class="line"></span><br><span class="line">  public void doFilter( request, response, chain) &#123;</span><br><span class="line"></span><br><span class="line">    // 这里用定义的包装器类‘包装’响应response</span><br><span class="line">    CompressionResponseWrapper wrappedResp</span><br><span class="line">      = new CompressionResponseWrapper(response);</span><br><span class="line"></span><br><span class="line">    chain.doFilter(request, wrappedResp);</span><br><span class="line"></span><br><span class="line">    // 完成压缩逻辑</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  public void destroy() &#123; ... &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/27/Translation-Articles-Dapper-a-Large-Scale-Distributed-Systems-Tracing-Infrastructure/" rel="next" title="(翻译) Dapper分布式跟踪系统">
+                <i class="fa fa-chevron-left"></i> (翻译) Dapper分布式跟踪系统
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/02/HTTP-2/" rel="prev" title="HTTP/2 的那些事儿">
+                HTTP/2 的那些事儿 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#servlet交互流程"><span class="nav-number">1.</span> <span class="nav-text">servlet交互流程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#web-xml"><span class="nav-number">2.</span> <span class="nav-text">web.xml</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#servlet线程安全"><span class="nav-number">3.</span> <span class="nav-text">servlet线程安全</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#servlet生命周期"><span class="nav-number">4.</span> <span class="nav-text">servlet生命周期</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#servlet-初始化参数"><span class="nav-number">4.1.</span> <span class="nav-text">servlet 初始化参数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#servlet-初始化顺序"><span class="nav-number">4.2.</span> <span class="nav-text">servlet 初始化顺序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#servlet-上下文初始化参数"><span class="nav-number">4.3.</span> <span class="nav-text">servlet 上下文初始化参数</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ServletConfig-vs-ServletCotext"><span class="nav-number">5.</span> <span class="nav-text">ServletConfig vs ServletCotext</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#监听ServletContext的创建和销毁-ServletContextListener（上下文作用域不是线程安全的）"><span class="nav-number">5.1.</span> <span class="nav-text">监听ServletContext的创建和销毁 - ServletContextListener（上下文作用域不是线程安全的）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#servlet-8个监听器"><span class="nav-number">5.1.1.</span> <span class="nav-text">servlet 8个监听器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HttpSessionAttributeListener-vs-HttpSessionBindingListener"><span class="nav-number">5.1.2.</span> <span class="nav-text">HttpSessionAttributeListener vs HttpSessionBindingListener</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一些概念"><span class="nav-number">5.2.</span> <span class="nav-text">一些概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RequestDispatcher"><span class="nav-number">5.3.</span> <span class="nav-text">RequestDispatcher</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#servlet重定向"><span class="nav-number">6.</span> <span class="nav-text">servlet重定向</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#拦截器-filter"><span class="nav-number">7.</span> <span class="nav-text">拦截器 filter</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#拦截器Filter生命周期"><span class="nav-number">7.1.</span> <span class="nav-text">拦截器Filter生命周期</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Filter声明方式"><span class="nav-number">7.2.</span> <span class="nav-text">Filter声明方式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#声明Filter"><span class="nav-number">7.2.1.</span> <span class="nav-text">声明Filter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#filter-mapping"><span class="nav-number">7.2.2.</span> <span class="nav-text">filter-mapping</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#声明对应URL模式的过滤器映射"><span class="nav-number">7.2.2.1.</span> <span class="nav-text">声明对应URL模式的过滤器映射</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#声明对应Servlet名的过滤器映射"><span class="nav-number">7.2.2.2.</span> <span class="nav-text">声明对应Servlet名的过滤器映射</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Servlet-包装器-Wrapper"><span class="nav-number">8.</span> <span class="nav-text">Servlet 包装器 - *Wrapper</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#压缩返回值的🌰"><span class="nav-number">8.1.</span> <span class="nav-text">压缩返回值的🌰</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

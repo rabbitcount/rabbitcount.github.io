@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="CMS(Concurrent-Mark-Sweep)是 Hotspot 虚拟机中目前使用最广泛的老年代垃圾回收器，在响应时间这个GC 指标上表现优异。CMS 在什么时机开始工作？触发的条件都有哪些？今天我们可以从 OpenJDK 中 CMS 这一块的实现来分析一下，该实现主要位于concurrentMarkSweepGeneration 和 ConcurrentMarkThread 这两个类中。">
+<meta name="keywords" content="jvm,gc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CMS 垃圾回收启动的时机">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/02/14/cms-gc-timing/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="CMS(Concurrent-Mark-Sweep)是 Hotspot 虚拟机中目前使用最广泛的老年代垃圾回收器，在响应时间这个GC 指标上表现优异。CMS 在什么时机开始工作？触发的条件都有哪些？今天我们可以从 OpenJDK 中 CMS 这一块的实现来分析一下，该实现主要位于concurrentMarkSweepGeneration 和 ConcurrentMarkThread 这两个类中。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/image2017-12-25%2014_8_31.png">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="CMS 垃圾回收启动的时机">
+<meta name="twitter:description" content="CMS(Concurrent-Mark-Sweep)是 Hotspot 虚拟机中目前使用最广泛的老年代垃圾回收器，在响应时间这个GC 指标上表现优异。CMS 在什么时机开始工作？触发的条件都有哪些？今天我们可以从 OpenJDK 中 CMS 这一块的实现来分析一下，该实现主要位于concurrentMarkSweepGeneration 和 ConcurrentMarkThread 这两个类中。">
+<meta name="twitter:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/image2017-12-25%2014_8_31.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/02/14/cms-gc-timing/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>CMS 垃圾回收启动的时机 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/02/14/cms-gc-timing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">CMS 垃圾回收启动的时机
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-02-14 22:54:15" itemprop="dateCreated datePublished" datetime="2018-02-14T22:54:15+08:00">2018-02-14</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>CMS(Concurrent-Mark-Sweep)是 Hotspot 虚拟机中目前使用最广泛的老年代垃圾回收器，在响应时间这个GC 指标上表现优异。CMS 在什么时机开始工作？触发的条件都有哪些？今天我们可以从 OpenJDK 中 CMS 这一块的实现来分析一下，该实现主要位于<em>concurrentMarkSweepGeneration</em> 和 <em>ConcurrentMarkThread</em> 这两个类中。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/image2017-12-25%2014_8_31.png" alt></p>
+<h2 id="检查的时机"><a href="#检查的时机" class="headerlink" title="检查的时机"></a>检查的时机</h2><p>由 CMS 垃圾回收线程执行垃圾回收的 检查逻辑。</p>
+<p><strong>ConcurrentMarkThread.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">void ConcurrentMarkThread::run() &#123;</span><br><span class="line">  // 全局初始化</span><br><span class="line">  while (!_should_terminate) &#123;</span><br><span class="line"></span><br><span class="line">    // 一直等待，直到可以开始垃圾回收</span><br><span class="line">    sleepBeforeNextCycle();</span><br><span class="line"></span><br><span class="line">    //...</span><br><span class="line">    //...</span><br><span class="line">    // 执行具体的垃圾回收逻辑</span><br><span class="line">    //...</span><br><span class="line">    //...</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><em>sleepBeforeNextCycle</em> 的 实现如下：</p>
+<p><strong>ConcurrentMarkThread.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">void ConcurrentMarkSweepThread::sleepBeforeNextCycle() &#123;</span><br><span class="line">  while (!_should_terminate) &#123;</span><br><span class="line">    if (CMSIncrementalMode) &#123;</span><br><span class="line">      icms_wait();</span><br><span class="line">      if(CMSWaitDuration &gt;= 0) &#123;</span><br><span class="line">        wait_on_cms_lock_for_scavenge(CMSWaitDuration);</span><br><span class="line">      &#125;</span><br><span class="line">      return;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      if(CMSWaitDuration &gt;= 0) &#123;</span><br><span class="line">        wait_on_cms_lock_for_scavenge(CMSWaitDuration);</span><br><span class="line">      &#125; else &#123;</span><br><span class="line">        wait_on_cms_lock(CMSCheckInterval);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    // 检查是否开始新一轮 CMS 回收周期</span><br><span class="line">    if (_collector-&gt;shouldConcurrentCollect()) &#123;</span><br><span class="line">      return;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>注：</p>
+<ul>
+<li><em>CMSWaitDuration</em>：指的是 CMS 线程用于等待 Young GC 的时间，默认值是2000ms；</li>
+<li><em>CMSIncrementalMode</em> ：标识 CMS 是否使用 增量垃圾回收模式，默认为false；</li>
+<li>_wait_on_cms_lock_for_scavenge_：这个函数可以让线程 sleep 一段时间，除非有同步 GC 或者 Full GC 发生。</li>
+</ul>
+<h2 id="检查的过程"><a href="#检查的过程" class="headerlink" title="检查的过程"></a>检查的过程</h2><p>是否需要开始新一轮的 CMS 垃圾回收，主要实现在 <em>shouldConcurrentCollect();</em></p>
+<h3 id="主动触发-GC"><a href="#主动触发-GC" class="headerlink" title="主动触发 GC"></a>主动触发 GC</h3><p>如果应用主动请求 GC（<em>System.gc()</em>），则直接触发 （当然要设置 <em>ExplicitGCInvokesConcurrent</em> 参数才会使用 CMS 来完成 Full GC），判断的代码如下：</p>
+<p><strong>ConcurrentMarkSweepGeneration.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">if (_full_gc_requested) &#123;</span><br><span class="line">    if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">        gclog_or_tty-&gt;print_cr(&quot;CMSCollector: collect because of explicit &quot;</span><br><span class="line">                                       &quot; gc request (or gc_locker)&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="被动触发检查"><a href="#被动触发检查" class="headerlink" title="被动触发检查"></a>被动触发检查</h3><h4 id="未设置-XX-UseCMSInitiatingOccupancyOnly"><a href="#未设置-XX-UseCMSInitiatingOccupancyOnly" class="headerlink" title="未设置 -XX:+UseCMSInitiatingOccupancyOnly"></a>未设置 <em>-XX:+UseCMSInitiatingOccupancyOnly</em></h4><ul>
+<li>如果统计开启了，且 CMS 完成时间小于 CMS 中各代剩余空间被填满的时间，则触发一次 CMS；</li>
+<li>统计不可用，（第一次没有统计信息)，年老代大于__bootstrap_occupancy_，则触发 CMS ；</li>
+</ul>
+<p><strong>ConcurrentMarkSweepGeneration.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">//CMSBootstrapOccupancy 是一个可配置的参数，其值介于 0 到 100 之间。</span><br><span class="line">_bootstrap_occupancy = ((double) CMSBootstrapOccupancy) / (double) 100;</span><br><span class="line"></span><br><span class="line">if (!UseCMSInitiatingOccupancyOnly) &#123;</span><br><span class="line">    if (stats().valid()) &#123;</span><br><span class="line">        if (stats().time_until_cms_start() == 0.0) &#123;</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        if (_cmsGen-&gt;occupancy() &gt;= _bootstrap_occupancy) &#123;</span><br><span class="line">            if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">                gclog_or_tty-&gt;print_cr(</span><br><span class="line">                        &quot; CMSCollector: collect for bootstrapping statistics:&quot;</span><br><span class="line">                                &quot; occupancy = %f, boot occupancy = %f&quot;, _cmsGen-&gt;occupancy(),</span><br><span class="line">                        _bootstrap_occupancy);</span><br><span class="line">            &#125;</span><br><span class="line">            return true;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h4 id="设置了-XX-UseCMSInitiatingOccupancyOnly"><a href="#设置了-XX-UseCMSInitiatingOccupancyOnly" class="headerlink" title="设置了 -XX:+UseCMSInitiatingOccupancyOnly"></a>设置了 <em>-XX:+UseCMSInitiatingOccupancyOnly</em></h4><ol>
+<li>首先判断老年代内存使用决定是否回收，核心代码在 _should_concurrent_collect_ ，为 true 则触发 CMS；</li>
+<li>根据增量模式收集是否失败决定是否回收，_incremental_collection_will_fail_，为 true 则触发 CMS，返回为 true 的主要条件有两个：<ol>
+<li>老年代的可用内存大小 &lt; Eden 区的内存使用量 + From 区的内存使用量</li>
+<li>老年代的可用内存大小 &lt; YGC 时晋升到老年代对象大小的平均值</li>
+</ol>
+</li>
+<li>根据元空间的内存使用决定是否回收， _MetaspaceGC::should_concurrent_collect()_，true 则触发 CMS ；</li>
+<li>最后根据触发间隔(<em>CMSTriggerInterval</em>)，其值默认为-1，所以一般不走这个逻辑);</li>
+</ol>
+<p><strong>ConcurrentMarkThread.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">// 根据内存使用是否满足回收的条件进行判定</span><br><span class="line">if (_cmsGen-&gt;should_concurrent_collect()) &#123;</span><br><span class="line">    if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">        gclog_or_tty-&gt;print_cr(&quot;CMS old gen initiated&quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 根据CMS是否存在回收失败的风险进行判定</span><br><span class="line">GenCollectedHeap *gch = GenCollectedHeap::heap();</span><br><span class="line">assert(gch-&gt;collector_policy()-&gt;is_two_generation_policy(),</span><br><span class="line">       &quot;You may want to check the correctness of the following&quot;);</span><br><span class="line">if (gch-&gt;incremental_collection_will_fail(true /* consult_young */)) &#123;</span><br><span class="line">    if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">        gclog_or_tty-&gt;print(&quot;CMSCollector: collect because incremental collection will fail &quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 根据元空间剩余空间大小判定</span><br><span class="line">if (MetaspaceGC::should_concurrent_collect()) &#123;</span><br><span class="line">    if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">        gclog_or_tty-&gt;print(&quot;CMSCollector: collect for metadata allocation &quot;);</span><br><span class="line">    &#125;</span><br><span class="line">    return true;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 根据 CMS 触发的周期判定：</span><br><span class="line">// a. 如果配置为0则返回为 true</span><br><span class="line">// b. 如果自cms触发到现在为止的时间大于触发周期，返回 true</span><br><span class="line">if (CMSTriggerInterval &gt;= 0) &#123;</span><br><span class="line">    if (CMSTriggerInterval == 0) &#123;</span><br><span class="line">        // Trigger always</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (stats().cms_time_since_begin() &gt;= (CMSTriggerInterval / ((double) MILLIUNITS))) &#123;</span><br><span class="line">        if (Verbose &amp;&amp; PrintGCDetails) &#123;</span><br><span class="line">            if (stats().valid()) &#123;</span><br><span class="line">                gclog_or_tty-&gt;print_cr(</span><br><span class="line">                        &quot;CMSCollector: collect because of trigger interval (time since last begin %3.7f secs)&quot;,</span><br><span class="line">                        stats().cms_time_since_begin());</span><br><span class="line">            &#125; else &#123;</span><br><span class="line">                gclog_or_tty-&gt;print_cr(&quot;CMSCollector: collect because of trigger interval (first collection)&quot;);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<hr>
+<p>_should_concurrent_collect_ 被用于判断是否应触发 CMS 回收老年代，核心判断如下：</p>
+<ul>
+<li>判断 <em>occupancy()</em> 是否大于 _init_occupancy()（通过-XX:CMSInitiatingOccupancyFraction=n 初始化）_，大于则触发；</li>
+<li>如果设置了 <em>-XX:+UseCMSInitiatingOccupancyOnly</em>，直接返回，不再继续后面逻辑；</li>
+<li>如果没有设置 <em>-XX:+UseCMSInitiatingOccupancyOnly</em>，则根据空闲链表（记录了还可以分配的内存）的使用，返回对应的 bool 值，这里就不具体展开了。</li>
+</ul>
+<p>其中 i_nit_occupancy()_ 可以获取 变量 _initiating_occupancy_ 的值，后者是通过 JVM 的启动参数 <em>CMSInitiatingOccupancyFraction</em> 初始化的。</p>
+<p><strong>ConcurrentMarkSweepGeneration.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">bool ConcurrentMarkSweepGeneration::should_concurrent_collect() const &#123;</span><br><span class="line">    assert_lock_strong(freelistLock());</span><br><span class="line">    if (occupancy() &gt; initiating_occupancy()) &#123;</span><br><span class="line">        if (PrintGCDetails &amp;&amp; Verbose) &#123;</span><br><span class="line">            gclog_or_tty-&gt;print(&quot; %s: collect because of occupancy %f / %f  &quot;,</span><br><span class="line">                                short_name(), occupancy(), initiating_occupancy());</span><br><span class="line">        &#125;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    if (UseCMSInitiatingOccupancyOnly) &#123;</span><br><span class="line">        return false;</span><br><span class="line">    &#125;</span><br><span class="line">    if (expansion_cause() == CMSExpansionCause::_satisfy_allocation) &#123;</span><br><span class="line">        if (PrintGCDetails &amp;&amp; Verbose) &#123;</span><br><span class="line">            gclog_or_tty-&gt;print(&quot; %s: collect because expanded for allocation &quot;,</span><br><span class="line">                                short_name());</span><br><span class="line">        &#125;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    if (_cmsSpace-&gt;should_concurrent_collect()) &#123;</span><br><span class="line">        if (PrintGCDetails &amp;&amp; Verbose) &#123;</span><br><span class="line">            gclog_or_tty-&gt;print(&quot; %s: collect because cmsSpace says so &quot;,</span><br><span class="line">                                short_name());</span><br><span class="line">        &#125;</span><br><span class="line">        return true;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在 <em>CompactibleFreeListSpace.cpp</em> 中，实现了__cmsSpace_→_should_concurrent_collect()_：</p>
+<p><strong>CompactibleFreeListSpace.cpp</strong><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">// Support for concurrent collection policy decisions.</span><br><span class="line">bool CompactibleFreeListSpace::should_concurrent_collect() const &#123;</span><br><span class="line">  // In the future we might want to add in frgamentation stats --</span><br><span class="line">  // including erosion of the &quot;mountain&quot; into this decision as well.</span><br><span class="line">  return !adaptive_freelists() &amp;&amp; linearAllocationWouldFail();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="过程总结"><a href="#过程总结" class="headerlink" title="过程总结"></a>过程总结</h2><p>是否进行CMS回收，归纳如下：</p>
+<ol>
+<li>如果应用主动请求 GC，直接触发；</li>
+<li>是否设置 <em>UseCMSInitiatingOccupancyOnly</em>；<ol>
+<li>没有设置 <em>UseCMSInitiatingOccupancyOnly</em><ol>
+<li>统计开启（<em>stats.valid</em>），统计的cms完成时间小于cms剩余空间被填满的时间，则触发；</li>
+<li>统计不可用，（第一次没有统计信息，!<em>stats.valid</em>)，年老代大于 __bootstrap_occupancy_，则触发；</li>
+</ol>
+</li>
+<li>设置 <em>UseCMSInitiatingOccupancyOnly</em><ol>
+<li>根据指定年老代的判断逻辑 _should_concurrent_collect_，true 则触发；</li>
+<li>根据增量模式收集是否失败，_incremental_collection_will_fail_，true 则触发；</li>
+<li>根据元数据区的判断逻辑 _should_concurrent_collect_，true 则触发；</li>
+<li>最后根据触发间隔(<em>CMSTriggerInterval</em>，默认为-1，所以一般不走这个逻辑);</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jvm/" rel="tag"># jvm</a>
+          
+            <a href="/tags/gc/" rel="tag"># gc</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/14/jdk-gc-algorithm/" rel="next" title="垃圾回收的算法与实现">
+                <i class="fa fa-chevron-left"></i> 垃圾回收的算法与实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/15/java-performance/" rel="prev" title="Java性能调优">
+                Java性能调优 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#检查的时机"><span class="nav-number">1.</span> <span class="nav-text">检查的时机</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#检查的过程"><span class="nav-number">2.</span> <span class="nav-text">检查的过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#主动触发-GC"><span class="nav-number">2.1.</span> <span class="nav-text">主动触发 GC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#被动触发检查"><span class="nav-number">2.2.</span> <span class="nav-text">被动触发检查</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#未设置-XX-UseCMSInitiatingOccupancyOnly"><span class="nav-number">2.2.1.</span> <span class="nav-text">未设置 -XX:+UseCMSInitiatingOccupancyOnly</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#设置了-XX-UseCMSInitiatingOccupancyOnly"><span class="nav-number">2.2.2.</span> <span class="nav-text">设置了 -XX:+UseCMSInitiatingOccupancyOnly</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#过程总结"><span class="nav-number">3.</span> <span class="nav-text">过程总结</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

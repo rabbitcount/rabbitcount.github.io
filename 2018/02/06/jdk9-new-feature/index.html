@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Java 9版本于2017年9月21日发布，本文将主要介绍Java 9中引入的若干新特性。在介绍之前，还是很必要回顾一下Java 8发布的内容，毕竟Java 9中的若干新特性（例，Stream 流处理）也是在前者基础上的展开的。 Java 8特性回顾Java 8是Java自Java 5（发布于2004年）之后的最重要的版本。这个版本包含语言、编译器、库、工具和JVM等方面的十多个新特性。主要有：">
+<meta name="keywords" content="jdk9,feature">
+<meta property="og:type" content="article">
+<meta property="og:title" content="jdk9-new-feature">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/02/06/jdk9-new-feature/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="Java 9版本于2017年9月21日发布，本文将主要介绍Java 9中引入的若干新特性。在介绍之前，还是很必要回顾一下Java 8发布的内容，毕竟Java 9中的若干新特性（例，Stream 流处理）也是在前者基础上的展开的。 Java 8特性回顾Java 8是Java自Java 5（发布于2004年）之后的最重要的版本。这个版本包含语言、编译器、库、工具和JVM等方面的十多个新特性。主要有：">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/jdk9/jdk-modules.jpg">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="jdk9-new-feature">
+<meta name="twitter:description" content="Java 9版本于2017年9月21日发布，本文将主要介绍Java 9中引入的若干新特性。在介绍之前，还是很必要回顾一下Java 8发布的内容，毕竟Java 9中的若干新特性（例，Stream 流处理）也是在前者基础上的展开的。 Java 8特性回顾Java 8是Java自Java 5（发布于2004年）之后的最重要的版本。这个版本包含语言、编译器、库、工具和JVM等方面的十多个新特性。主要有：">
+<meta name="twitter:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/jdk9/jdk-modules.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/02/06/jdk9-new-feature/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>jdk9-new-feature | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/02/06/jdk9-new-feature/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">jdk9-new-feature
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-02-06 23:20:32" itemprop="dateCreated datePublished" datetime="2018-02-06T23:20:32+08:00">2018-02-06</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Java 9版本于2017年9月21日发布，本文将主要介绍Java 9中引入的若干新特性。在介绍之前，还是很必要回顾一下Java 8发布的内容，毕竟Java 9中的若干新特性（例，Stream 流处理）也是在前者基础上的展开的。</p>
+<h1 id="Java-8特性回顾"><a href="#Java-8特性回顾" class="headerlink" title="Java 8特性回顾"></a>Java 8特性回顾</h1><p>Java 8是Java自Java 5（发布于2004年）之后的最重要的版本。这个版本包含语言、编译器、库、工具和JVM等方面的十多个新特性。主要有：</p>
+<p><strong>Java语言</strong></p>
+<ul>
+<li>方法引用</li>
+<li>重复注解</li>
+<li>类型推断</li>
+<li>参数名称</li>
+<li>拓宽注解的使用</li>
+<li>Lambda表达式</li>
+<li>接口的默认方法和静态方法</li>
+</ul>
+<p><strong>JDK新特性</strong></p>
+<ul>
+<li>Optional</li>
+<li>Streams</li>
+<li>Date/Time API</li>
+<li>Base64</li>
+<li>并行数组</li>
+<li>新增 StampedLock</li>
+<li>原子性操作类添加新成员</li>
+<li>优化HashMap</li>
+</ul>
+<p><strong>JVM</strong></p>
+<ul>
+<li>使用 元空间（Metaspace）代替永久代（PermGen space）</li>
+<li>使用 -XX:MetaSpaceSize和 -XX:MaxMetaspaceSize 代替原来的 -XX:PermSize和-XX:MaxPermSize。</li>
+</ul>
+<p><strong>工具/编译器</strong></p>
+<ul>
+<li>Nashorn引擎：jjs</li>
+<li>类依赖分析器：jdeps</li>
+</ul>
+<h1 id="Java-9的安装"><a href="#Java-9的安装" class="headerlink" title="Java 9的安装"></a>Java 9的安装</h1><h2 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h2><p><span class="exturl" data-url="aHR0cDovL3d3dy5vcmFjbGUuY29tL3RlY2huZXR3b3JrL2phdmEvamF2YXNlL2Rvd25sb2Fkcy9qZGs5LWRvd25sb2Fkcy0zODQ4NTIwLmh0bWw=" title="http://www.oracle.com/technetwork/java/javase/downloads/jdk9-downloads-3848520.html">Java SE Development Kit 9 Downloads<i class="fa fa-external-link"></i></span></p>
+<h2 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h2><p>将 JAVA_HOME 配置为 Java 9的路径后，查看 JDK 版本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br><span class="line">java version &quot;9.0.1&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 9.0.1+11)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 9.0.1+11, mixed mode)</span><br></pre></td></tr></table></figure></p>
+<p>将 JAVA_HOME 配置为 Java 8的路径后，再次查看 JDK 版本：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br><span class="line">java version &quot;1.8.0_92&quot;</span><br><span class="line">Java(TM) SE Runtime Environment (build 1.8.0_92-b14)</span><br><span class="line">Java HotSpot(TM) 64-Bit Server VM (build 25.92-b14, mixed mode)</span><br></pre></td></tr></table></figure></p>
+<p>注意这里的一个细节：<strong>从 Java 9开始，Java 版本方案将根据业内软件版本编码的最佳实践进行修改</strong>，即Java版本字符串将依次包含如下三个部分：主版本号、小（维护）版本号和安全版本号。这一变化可能会导致目前解析版本字符串而有假定版本号开头为1或点的应用程序出现问题。例如： System.getProperty(“java.version”).indexof(‘.’);。</p>
+<h1 id="Java-9新特性"><a href="#Java-9新特性" class="headerlink" title="Java 9新特性"></a>Java 9新特性</h1><h2 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h2><p><strong>Java语言</strong></p>
+<ul>
+<li>Jigsaw：模块化</li>
+<li>接口中的私有方法</li>
+</ul>
+<p><strong>JDK</strong></p>
+<ul>
+<li>进程 API 增强</li>
+<li>改进了 Stream API</li>
+<li>集合类的工厂方法</li>
+<li>Try-With-Resources 改进</li>
+<li>HTTP/2</li>
+<li>响应式流 Reactive Streams</li>
+</ul>
+<p><strong>JVM</strong></p>
+<ul>
+<li>修改默认垃圾回收器</li>
+<li>优化字符串占用空间</li>
+<li>竞争锁的性能优化</li>
+<li>代码分段缓存</li>
+</ul>
+<p><strong>工具/编译器</strong></p>
+<ul>
+<li>JShell：Java交互式REPL</li>
+<li>改进的 Javadoc</li>
+<li>多版本 JAR</li>
+</ul>
+<h2 id="详解"><a href="#详解" class="headerlink" title="详解"></a>详解</h2><h3 id="新特性1：Jigsaw：模块化"><a href="#新特性1：Jigsaw：模块化" class="headerlink" title="新特性1：Jigsaw：模块化"></a>新特性1：Jigsaw：模块化</h3><p>模块系统主要解决两个基本问题：</p>
+<ol>
+<li>Jar包膨胀：以类和接口进行面向对象的设计在系统规模越来越大时因为隔离粒度问题而难以真正地封装代码，因为在更高粒度层面（JAR 文件，如tool.jar, rt.jar），系统的不同部分之间没有明确的依赖关系的概念。</li>
+<li>类使用的的安全性：类路径（classpath）中的任何其他类可以访问每个公共类，这会导致开发人员无意中使用不是公开API的类，严重影响系统后续维护升级。</li>
+</ol>
+<p>模块化的引入使得JDK可以在更小的设备中使用，因为采用模块化系统的应用程序只需要这些应用程序所需的那部分 JDK 模块，而非是整个JDK框架了。</p>
+<p>其次，模块化使得对 package 的控制更精细了，这与 maven 的通过依赖不同之处，在于 maven 使用了dependency 进行管理依赖，而 jigsaw 使用 requiure 进行管理依赖，通过 export，可以只暴露某个模块下指定的包给调用者（写到这里我联想到了 Javascript 里面的 requirejs 模块，Java 这两个关键字的灵感来自于此？）。</p>
+<p>例子：</p>
+<p>编写模块化的代码和没有模块化的代码区别并不大，Java 9 通过根目录下的 module-info.java 文件进行区分。</p>
+<p>整个工程的结构为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">src</span><br><span class="line">└── main</span><br><span class="line">└── java</span><br><span class="line">├── com</span><br><span class="line">│ └── sk</span><br><span class="line">│ └── scalpel</span><br><span class="line">│ └── priviate</span><br><span class="line">│ └── PrivateClass.java</span><br><span class="line">│ └── common</span><br><span class="line">│ └── CommonClass.java</span><br><span class="line">└── module-info.java</span><br></pre></td></tr></table></figure></p>
+<p>src/main/java/module-info.java 内容为：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">module commonClass.jigsaw &#123;</span><br><span class="line">    exports com.sk.ocelot.common;</span><br><span class="line">    requires sso;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这个模块描述符中，<font color="#0099ff">通过 requires 语句来表示对其他模块的依赖，此外，exports 语句可以控制哪些package 可被其他模块使用</font>。</p>
+<p><font color="#0099ff">Java 平台本身也使用自己的模块系统进行了模块化</font>。通过封装 JDK 内部类，Java 平台变得更加安全并且让后续的持续演进变得容易得多。比如 rt.jar, tools.jar 两个核心 Jar包，被 JDK9/jmods 文件下若干个 *.jmod 文件所替代。</p>
+<p>下图是 Java9 中的模块依赖图，可以看到，所有的模块都依赖了一个叫做 java.base 的模块，而 java.base 中包含了Java 语言层面的一些基础包，如 java.net、 java.nio、java、util等，具体可参考 Module java.base</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/jdk9/jdk-modules.jpg" alt></p>
+<h2 id="新特性2：JShell：Java交互式REPL"><a href="#新特性2：JShell：Java交互式REPL" class="headerlink" title="新特性2：JShell：Java交互式REPL"></a>新特性2：JShell：Java交互式REPL</h2><p>REPL是一种快速运行语句的命令行工具，很多语言都具备这个能力，如 Python、Scala 等。我们可以从控制台启动 jshell，然后直接输入和执行 Java 代码，jshell的即时反馈使它成为探索API和尝试语言特性的好工具。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">pwd</span><br><span class="line">/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home/bin</span><br><span class="line">./jshell</span><br><span class="line">| 欢迎使用 JShell -- 版本 9.0.1</span><br><span class="line">| 要大致了解该版本, 请键入: /help intro</span><br><span class="line">jshell&gt; System.out.println(&quot;Current process id: &quot; + ProcessHandle.current().pid());</span><br><span class="line">Current process id: 9022</span><br><span class="line">jshell&gt;</span><br></pre></td></tr></table></figure>
+<p>有了 JShell 后，测试 API 再也不用去新建一个工程了~</p>
+<h3 id="新特性3：垃圾回收器"><a href="#新特性3：垃圾回收器" class="headerlink" title="新特性3：垃圾回收器"></a>新特性3：垃圾回收器</h3><p>Garbage First（G1）的设计初衷是，以更高的计算成本为代价最小化STW中断时间。Java 9 使用G1作为默认的垃圾收集器，替代了之前默认使用的 Parallel GC。事实上它从 JDK 8u40 开始就已经十分完善，足以作为默认的垃圾收集器了。</p>
+<p>当然，这里也存在若干争议，可以看下一下这篇文章：<span class="exturl" data-url="aHR0cHM6Ly93d3cuaW5mb3EuY29tL25ld3MvMjAxNS8wNi9PcmFjbGUtUHJvcG9zZXMtRzEtRGVmYXVsdC1HQw==" title="https://www.infoq.com/news/2015/06/Oracle-Proposes-G1-Default-GC">Oracle Proposes G1 as the Default Garbage Collector for Java 9<i class="fa fa-external-link"></i></span>。</p>
+<h3 id="新特性4：字符串优化"><a href="#新特性4：字符串优化" class="headerlink" title="新特性4：字符串优化"></a>新特性4：字符串优化</h3><p>JDK 6 引入了可选的 Compressed String 功能，JDK 9 引入了 Compact String ，它们两者的设计目的都是优化字符串在 JVM 中的内存占用。因为 Java 内部使用 UTF-16，占用两个字节，但从统计角度来说只需 8 比特的情况占大多数，例如：LATIN-1。大多数情况下，字符串实例常占用比它实际需要的内存多一倍的空间。</p>
+<p>Java 6中，在启动参数里使用 <em>-XX:+UseCompressedStrings</em> 可以启用 Compressed String 功能，字符串将以 byte[] 的形式存储，代替原来的 char[]，此功能最终在 JDK 7 中被移除，主要原因在于它将带来一些无法预料的性能问题（存储为 byte[] 后，字符串的操作方法都依赖于字符数组的表现形式，而非字节数组。介于此，很多的方法都需将压缩后的字节数组解压缩为字符数组，无形中影响了性能）。</p>
+<p>Java 9重新采纳字符串压缩这一概念：通过引入了一个 final 修饰的成员变量 coder, 由它来保存当前字符串的编码信息。若该字符串为 LATIN-1 编码，则使用8个比特来存储，若干 UTF-16 编码，则使用16个比特来编码。代码如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">public final class String</span><br><span class="line">    implements java.io.Serializable, Comparable&lt;String&gt;, CharSequence &#123;</span><br><span class="line"> </span><br><span class="line">    /**</span><br><span class="line">     * The value is used for character storage.</span><br><span class="line">     *</span><br><span class="line">     * @implNote This field is trusted by the VM, and is a subject to</span><br><span class="line">     * constant folding if String instance is constant. Overwriting this</span><br><span class="line">     * field after construction will cause problems.</span><br><span class="line">     *</span><br><span class="line">     * Additionally, it is marked with &#123;@link Stable&#125; to trust the contents</span><br><span class="line">     * of the array. No other facility in JDK provides this functionality (yet).</span><br><span class="line">     * &#123;@link Stable&#125; is safe here, because value is never null.</span><br><span class="line">     */</span><br><span class="line">    @Stable</span><br><span class="line">    private final byte[] value;</span><br><span class="line"> </span><br><span class="line">    /**</span><br><span class="line">     * The identifier of the encoding used to encode the bytes in</span><br><span class="line">     * &#123;@code value&#125;. The supported values in this implementation are</span><br><span class="line">     *</span><br><span class="line">     * LATIN1</span><br><span class="line">     * UTF16</span><br><span class="line">     *</span><br><span class="line">     * @implNote This field is trusted by the VM, and is a subject to</span><br><span class="line">     * constant folding if String instance is constant. Overwriting this</span><br><span class="line">     * field after construction will cause problems.</span><br><span class="line">     */</span><br><span class="line">    private final byte coder;</span><br><span class="line">    //略</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>可以看到 新引入的 coder 字段的及其作用。</p>
+<h3 id="新特性5：HTTP-2"><a href="#新特性5：HTTP-2" class="headerlink" title="新特性5：HTTP/2"></a>新特性5：HTTP/2</h3><p>HTTP/2标准是HTTP协议的最新版本，上一个版本HTTP/1.1诞生于1999年。</p>
+<p>Java对 HTTP 的支持是基于 HTTP/1.0 展开的，当时最好的设计思想已经无法满足现在的需求（如 HTTPS 的大规模普及）。同时，JDK 内核对 HTTP 的支持已经无法跟上现实网络的发展步伐。实际上，甚至JDK8也只不过是交付了一个支持 HTTP/1.0 的客户端，然而，大多数的开发者早已转而使用第三方客户端库了，比如Apache的HttpComponents。</p>
+<p>Java 9提供了一种HTTP调用的新方式。对于旧的“HttpURLConnetion”API来说，这个迟来的替换也添加了对 WebSockets和 HTTP/2 的支持。</p>
+<p>Java 9当前的代码库只支持 HTTP/1.1，但是已经包含了新的 API。这使得在对 HTTP/2 支持完成对过程中，开发者可以实验性地使用和验证新的 API。如下面的异步发送请求功能：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">try &#123;</span><br><span class="line">    HttpClient httpClient = HttpClient.newHttpClient();</span><br><span class="line">    HttpRequest httpRequest = HttpRequest.newBuilder().uri(new URI(&quot;https://www.bing.com/&quot;)).GET().build();</span><br><span class="line">    Map&lt; String, List &lt; String &gt;&gt; headers = httpRequest.headers().map();</span><br><span class="line">    CompletableFuture&lt;HttpResponse&lt; String &gt;&gt; asyncResponse = httpClient.sendAsync(httpRequest, HttpResponse.BodyHandler.asString());</span><br><span class="line">    if (!asyncResponse.isDone()) &#123;</span><br><span class="line">        asyncResponse.cancel(true);</span><br><span class="line">        System.out.println(&quot;Sedn async request failed...&quot;);</span><br><span class="line">        return;</span><br><span class="line">    &#125;</span><br><span class="line">    HttpResponse response = asyncResponse.get();</span><br><span class="line">    System.out.println(&quot;Response body: &quot; + response.body());</span><br><span class="line"> </span><br><span class="line">&#125; catch (Exception e) &#123;</span><br><span class="line">    System.out.println(&quot;message &quot; + e);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="新特性6：接口中的私有方法"><a href="#新特性6：接口中的私有方法" class="headerlink" title="新特性6：接口中的私有方法"></a>新特性6：接口中的私有方法</h3><p>Java 8使用两个新概念扩展了接口的含义：默认方法和静态方法。设想这样一个场景：在定义的接口中有几个默认方法，代码几乎相同，我们需要重构这些方法来调用包含共享功能的私有方法。现在的问题是：默认方法不能是私有的。使用共享代码创建另一个默认方法不是一个可行的解决方案，因为该帮助方法会成为公共API的一部分。在Java 9中，可以向接口添加私有的帮助方法来解决此问题：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public interface IInterfaceDemo &#123;</span><br><span class="line"> </span><br><span class="line">     default void method1() &#123;</span><br><span class="line">         init();</span><br><span class="line">         // do something</span><br><span class="line">     &#125;</span><br><span class="line"> </span><br><span class="line">     default void method2() &#123;</span><br><span class="line">         init();</span><br><span class="line">         // do something</span><br><span class="line">     &#125;</span><br><span class="line"> </span><br><span class="line">     // 公共方法声明为私有</span><br><span class="line">     private void init() &#123;</span><br><span class="line">         System.out.println(&quot;Current process id: &quot; + ProcessHandle.current().pid());</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="新特性7：进程增强API"><a href="#新特性7：进程增强API" class="headerlink" title="新特性7：进程增强API"></a>新特性7：进程增强API</h3><p>新增加的 API 提供了一种java程序和操作系统交互的能力，我们可以在代码中来获取关于进程的一些信息，java 9中新增了一个类 ProcessHandle，使用这个类可以很方便的查询进程的一些信息。</p>
+<p>下面略举几个例子，具体可参考 ProcessHandleImpl 这个实现类~</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">// 获取当前进程的PIDlong pid = ProcessHandle.current().pid();</span><br><span class="line"> </span><br><span class="line">// 获取当前进程的所有子进程</span><br><span class="line">Stream&lt;ProcessHandle&gt; children = ProcessHandle.current().children();</span><br><span class="line"> </span><br><span class="line">// 获取进程的存活状态</span><br><span class="line">boolean isProcessAlive = ProcessHandle.current().isAlive();</span><br><span class="line"> </span><br><span class="line">// 通过静态方法获取所有进程</span><br><span class="line">ProcessHandle.allProcesses().forEach(new Consumer&lt;ProcessHandle&gt;() &#123;</span><br><span class="line">  @Override</span><br><span class="line">  public void accept(ProcessHandle processHandle) &#123;</span><br><span class="line">    if (processHandle.pid() == pid) &#123;</span><br><span class="line">      System.out.println(&quot;I&apos;m the Current Process:&quot; + pid + &quot;\n&quot; + processHandle.info());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h3 id="新特性8：改进了Stream-API"><a href="#新特性8：改进了Stream-API" class="headerlink" title="新特性8：改进了Stream API"></a>新特性8：改进了Stream API</h3><p>Stream 接口新增方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">default Stream&lt;T&gt; dropWhile(Predicate&lt;? super T&gt; predicate)</span><br><span class="line">default Stream&lt;T&gt; takeWhile(Predicate&lt;? super T&gt; predicate)</span><br><span class="line">static &lt;T&gt; Stream&lt;T&gt; ofNullable(T t)</span><br><span class="line">static &lt;T&gt; Stream&lt;T&gt; iterate(T seed, Predicate&lt;? super T&gt; hasNext, UnaryOperator&lt;T&gt; next)</span><br></pre></td></tr></table></figure></p>
+<p>用法举例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">// 以下代码片段会生成包含1到100之间的所有整数的流：</span><br><span class="line">Stream.iterate(1, n -&gt; n &lt;= 100, n -&gt; n + 1)</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">// 以下代码输出 5, 6, 7</span><br><span class="line">List&lt;Integer&gt; list = Arrays.asList(1, 2, 3, 4, 5, 6, 7);</span><br><span class="line">list.stream().dropWhile(x -&gt; x &lt; 5).forEach(System.out::println);</span><br></pre></td></tr></table></figure></p>
+<p>Collectors 类 新增方法 filtering 和 flatMapping：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&lt;T,A,R&gt; Collector&lt;T,?,R&gt; filtering(Predicate&lt;? super T&gt; predicate, Collector&lt;? super T,A,R&gt; downstream)</span><br><span class="line">&lt;T,U,A,R&gt; Collector&lt;T,?,R&gt; flatMapping(Function&lt;? super T,? extends Stream&lt;? extends U&gt;&gt; mapper, Collector&lt;? super U,A,R&gt; downstream)</span><br></pre></td></tr></table></figure>
+<p>用法举例：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;String, List&lt;String&gt;&gt; keyValues = list.stream()</span><br><span class="line">        .collect(Collectors.toMap(String::valueOf, x -&gt; List.of(String.valueOf(x), String.valueOf(x))));</span><br><span class="line"> </span><br><span class="line">keyValues.forEach((key, value) -&gt; System.out.println(&quot;key: &quot; + key + &quot;, value: &quot; + value));/**</span><br><span class="line"> * 输出如下</span><br><span class="line"> * key: 1, value: [1, 1]</span><br><span class="line"> * key: 2, value: [2, 2]</span><br><span class="line"> * key: 3, value: [3, 3]</span><br><span class="line"> * key: 4, value: [4, 4]</span><br><span class="line"> * key: 5, value: [5, 5]</span><br><span class="line"> * key: 6, value: [6, 6]</span><br><span class="line"> * key: 7, value: [7, 7]</span><br><span class="line"> */List&lt;String&gt; values = keyValues.values()</span><br><span class="line"> .stream()</span><br><span class="line"> .collect(Collectors.flatMapping(e -&gt; e.stream().distinct(), Collectors.toList()));values.stream().forEach(System.out::print);// 输出 12345678</span><br></pre></td></tr></table></figure></p>
+<h3 id="新特性9：集合类的工厂方法"><a href="#新特性9：集合类的工厂方法" class="headerlink" title="新特性9：集合类的工厂方法"></a>新特性9：集合类的工厂方法</h3><p>在java 9中，分别为List、Set、Map增加了of静态工厂方法，来获取一个不可变的List、Set、Map。不变的对象在单线程和多线程下执行是没有区别的，即不会有线程安全问题，会降低并发编程带来的风险。</p>
+<p>Java 8 里：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 声明空集合List&lt;String&gt; emptyList = Collections.emptyList();</span><br><span class="line">// 声明一个单个元素的集合</span><br><span class="line">List&lt;String&gt; singleItemList = Collections.singletonList(&quot;singleItem&quot;);</span><br><span class="line">// 声明一个不可变的集合</span><br><span class="line">List&lt;String&gt; unmodifiableList = Collections.unmodifiableList(new ArrayList&lt;&gt;(Arrays.asList(&quot;item1&quot;, &quot;item2&quot;)));</span><br></pre></td></tr></table></figure></p>
+<p>Java 9里简化了声明：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 声明空集合List&lt;String&gt; emptyList = List.of();</span><br><span class="line">// 声明一个单个元素的集合</span><br><span class="line">List&lt;String&gt; singleItemList = List.of(&quot;singleItem&quot;);</span><br><span class="line">// 声明一个不可变的集合</span><br><span class="line">List&lt;String&gt; unmodifiableList = List.of(&quot;item1&quot;, &quot;item2&quot;);</span><br></pre></td></tr></table></figure></p>
+<p><font color="#0099ff">建议通过工厂类进行Collection类的声明</font>。除了更简洁和更好阅读之外，这些方法还可以让开发人员不必为选择特定的集合类实现而“头痛”。事实上，从工厂方法返回的集合实现是根据初始化时输入的元素数量高度优化过的。</p>
+<h3 id="新特性10：Try-With-Resources改进"><a href="#新特性10：Try-With-Resources改进" class="headerlink" title="新特性10：Try-With-Resources改进"></a>新特性10：Try-With-Resources改进</h3><p>在 java 7 以前，程序中使用的资源需要被明确地关闭，这个体验有点繁琐。try-with-resources 语句会确保在 try 语句结束时关闭所有资源。实现了java.lang.AutoCloseable 或 java.io.Closeable 的对象都可以做为资源。</p>
+<p>Java 7 之前的文件处理代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">private static void printFileBeforeJava7() throws IOException &#123;</span><br><span class="line">    InputStream input = null;</span><br><span class="line">    try &#123;</span><br><span class="line">        input = new FileInputStream(&quot;file.txt&quot;);</span><br><span class="line">        int data = input.read();</span><br><span class="line">        while (data != -1) &#123;</span><br><span class="line">            System.out.print((char) data);</span><br><span class="line">            data = input.read();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125; finally &#123;</span><br><span class="line">        if (input != null) &#123;</span><br><span class="line">            input.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Java 7 或 Java 8里面里的文件处理代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">private static void printFileJava7OrJava8() throws IOException &#123;</span><br><span class="line">    FileInputStream input = new FileInputStream(&quot;file.txt&quot;)</span><br><span class="line">     </span><br><span class="line">    // 注意这里需要重新定义资源</span><br><span class="line">    try (FileInputStream newInput = input) &#123;</span><br><span class="line">        int data = newInput.read();</span><br><span class="line">        while (data != -1) &#123;</span><br><span class="line">            System.out.print((char) data);</span><br><span class="line">            data = newInput.read();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Java 9 里的文件处理代码<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">private static void printFileInJava9() throws IOException &#123;</span><br><span class="line">    FileInputStream input = new FileInputStream(&quot;file.txt&quot;)</span><br><span class="line">     </span><br><span class="line">    // 注意这里不需要重新定义资源</span><br><span class="line">    try (input) &#123;</span><br><span class="line">        int data = input.read();</span><br><span class="line">        while (data != -1) &#123;</span><br><span class="line">            System.out.print((char) data);</span><br><span class="line">            data = input.read();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; catch (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="新特性11：多版本JAR"><a href="#新特性11：多版本JAR" class="headerlink" title="新特性11：多版本JAR"></a>新特性11：多版本JAR</h3><p>当新版本的Java出来时，某个类库的所有用户通常需要几年时间才能切换到这个新版本。这意味着类库必须向后兼容需要支持的最旧版本的Java（例如，在许多情况下为Java 6或7）。这实际上意味着很长一段时间内类库开发者无法在代码中使用Java 9的新功能。多版本JAR功能允许开发人员创建仅在特定Java版本上运行库时使用的类的备用版本：</p>
+<p>新建一个工程，打包为JAR 内部结构看起来像这样：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">multiVesionJarTest.jar</span><br><span class="line">├── META-INF</span><br><span class="line">│ └── versions</span><br><span class="line">│ └── 9</span><br><span class="line">│ └── package</span><br><span class="line">│ └── Test.class</span><br><span class="line">├── package</span><br><span class="line">│ └──Test.class</span><br><span class="line">└ └──Main.class</span><br></pre></td></tr></table></figure>
+<p>Java 8 或更早的版本会在直接使用 package 下面的 Test 类，但新版本会使在 META-INFO/versions 子目录中去找合适的内容来代替默认的，代码更为清爽。</p>
+<h3 id="新特性12：响应式流-Reactive-Streams"><a href="#新特性12：响应式流-Reactive-Streams" class="headerlink" title="新特性12：响应式流 Reactive Streams"></a>新特性12：响应式流 Reactive Streams</h3><p>JDK9中的 Flow API 对应响应式流规范，响应式流规范是一种事实标准，目标是使用非阻塞背压方式提供一个标准的异步流处理。</p>
+<p>更确切地说，响应式流目的是“找到最小的一组接口，方法和协议，用来描述必要的操作和实体以实现这样的目标：以非阻塞背压方式实现数据的异步流”，更详细的介绍，可参考文章：响应式流Reactive Streams</p>
+<p>java.util.concurrent.Flow包含的接口如下：</p>
+<ul>
+<li>Flow.Processor（处理器）</li>
+<li>Flow.Publisher（发布者）</li>
+<li>Flow.Subscriber（订阅者）</li>
+<li>Flow.Subscription（订阅管理器）</li>
+</ul>
+<p>下面给一个具体的例子:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">import java.util.List;</span><br><span class="line">import java.util.concurrent.ExecutorService;</span><br><span class="line">import java.util.concurrent.Executors;</span><br><span class="line">import java.util.concurrent.Flow;</span><br><span class="line">import java.util.concurrent.SubmissionPublisher;</span><br><span class="line"> </span><br><span class="line">/**</span><br><span class="line"> * Created by yves on 2017/11/4.</span><br><span class="line"> */</span><br><span class="line">public class FlowTest &#123;</span><br><span class="line">    private static final ExecutorService PUBLISHE_EXECUTOR = Executors.newFixedThreadPool(1);</span><br><span class="line">    private static final int MAX_CAPACITY = 1024;</span><br><span class="line"> </span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line"> </span><br><span class="line">        // 创建生产者</span><br><span class="line">        SubmissionPublisher&lt;String&gt; oracle = new SubmissionPublisher&lt;&gt;(PUBLISHE_EXECUTOR, MAX_CAPACITY);</span><br><span class="line"> </span><br><span class="line">        // 创建消费组</span><br><span class="line">        StrugglingDeveloper&lt;String&gt; developers = new StrugglingDeveloper&lt;&gt;();</span><br><span class="line">        oracle.subscribe(developers);</span><br><span class="line"> </span><br><span class="line">        // 发布消息</span><br><span class="line">        List.of(&quot;2011年7月7日：Java 7发布了&quot;, &quot;2014年3月19日：Java 8发布了&quot;, &quot;2017年9月21日：Java 9发布了&quot;)</span><br><span class="line">                .forEach(oracle::submit);</span><br><span class="line"> </span><br><span class="line">        oracle.close();</span><br><span class="line"> </span><br><span class="line">        System.out.println(&quot;&lt;Ready to publish item..&gt;&quot;);</span><br><span class="line">        PUBLISHE_EXECUTOR.submit(() -&gt; &#123;</span><br><span class="line">            //发布任务结束</span><br><span class="line">        &#125;);</span><br><span class="line"> </span><br><span class="line">        PUBLISHE_EXECUTOR.shutdownNow();</span><br><span class="line"> </span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    static class StrugglingDeveloper&lt;T&gt; implements Flow.Subscriber&lt;T&gt; &#123;</span><br><span class="line"> </span><br><span class="line">        @Override</span><br><span class="line">        public void onSubscribe(Flow.Subscription subscription) &#123;</span><br><span class="line">            subscription.request(5);</span><br><span class="line">            System.out.println(&quot;&lt;Start to Receive&gt;&quot;);</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        @Override</span><br><span class="line">        public void onNext(T item) &#123;</span><br><span class="line">            System.out.println(&quot;&lt;Received&gt;:&quot; + item);</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        @Override</span><br><span class="line">        public void onError(Throwable t) &#123;</span><br><span class="line">            t.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        @Override</span><br><span class="line">        public void onComplete() &#123;</span><br><span class="line">            System.out.println(&quot;&lt;onComplete&gt;&quot;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>输出如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&lt;Start to Receive&gt;</span><br><span class="line">&lt;Ready to publish item..&gt;</span><br><span class="line">&lt;Received&gt;:2011年7月7日：Java 7发布了</span><br><span class="line">&lt;Received&gt;:2014年3月19日：Java 8发布了</span><br><span class="line">&lt;Received&gt;:2017年9月21日：Java 9发布了</span><br><span class="line">&lt;onComplete&gt;</span><br></pre></td></tr></table></figure></p>
+<h3 id="新特性13：代码分段缓存"><a href="#新特性13：代码分段缓存" class="headerlink" title="新特性13：代码分段缓存"></a>新特性13：代码分段缓存</h3><p>Java 9的另一个性能提升来自于 JIT(Just-in-time) 编译器. 当某段代码被大量重复执行的时候, 虚拟机会把这段代码编译成机器码(native code)并储存在代码缓存里面, 进而通过访问缓存中不同分段的代码来提升编译器的效率。</p>
+<p>和原来的单一缓存区域不同的是, 新的代码缓存根据代码自身的生命周期而分为三种:</p>
+<ul>
+<li>永驻代码(JVM 内置 / 非方法代码)</li>
+<li>短期代码(仅在某些条件下适用的配置性(profiled)代码)</li>
+<li>长期代码(非配置性代码)</li>
+<li>缓存分段会在各个方面提升程序的性能, 比如做垃圾回收扫描的时候可以直接跳过非方法代码(永驻代码), 从而提升效率</li>
+</ul>
+<p>更多内容，请参考：<span class="exturl" data-url="aHR0cDovL29wZW5qZGsuamF2YS5uZXQvamVwcy8xOTc=" title="http://openjdk.java.net/jeps/197">JEP 197: Segmented Code Cache<i class="fa fa-external-link"></i></span></p>
+<h3 id="新特性14：其他新特性"><a href="#新特性14：其他新特性" class="headerlink" title="新特性14：其他新特性"></a>新特性14：其他新特性</h3><ul>
+<li>轻量级 JSON API</li>
+<li>Optional的流式处理</li>
+<li>改进的Javadoc（支持搜索 + 支持HTML5）</li>
+<li>改进了竞争锁 (<span class="exturl" data-url="aHR0cDovL29wZW5qZGsuamF2YS5uZXQvamVwcy8xNDM=" title="http://openjdk.java.net/jeps/143">JEP 143: Improve Contended Locking<i class="fa fa-external-link"></i></span>)</li>
+</ul>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jdk9/" rel="tag"># jdk9</a>
+          
+            <a href="/tags/feature/" rel="tag"># feature</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/12/20/jvm-garbage-collect/" rel="next" title="jvm_garbage_collect">
+                <i class="fa fa-chevron-left"></i> jvm_garbage_collect
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/14/linux-monitor-tools/" rel="prev" title="linux，Java 监控工具">
+                linux，Java 监控工具 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Java-8特性回顾"><span class="nav-number">1.</span> <span class="nav-text">Java 8特性回顾</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Java-9的安装"><span class="nav-number">2.</span> <span class="nav-text">Java 9的安装</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#下载"><span class="nav-number">2.1.</span> <span class="nav-text">下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用"><span class="nav-number">2.2.</span> <span class="nav-text">使用</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Java-9新特性"><span class="nav-number">3.</span> <span class="nav-text">Java 9新特性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#概要"><span class="nav-number">3.1.</span> <span class="nav-text">概要</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#详解"><span class="nav-number">3.2.</span> <span class="nav-text">详解</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性1：Jigsaw：模块化"><span class="nav-number">3.2.1.</span> <span class="nav-text">新特性1：Jigsaw：模块化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#新特性2：JShell：Java交互式REPL"><span class="nav-number">3.3.</span> <span class="nav-text">新特性2：JShell：Java交互式REPL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性3：垃圾回收器"><span class="nav-number">3.3.1.</span> <span class="nav-text">新特性3：垃圾回收器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性4：字符串优化"><span class="nav-number">3.3.2.</span> <span class="nav-text">新特性4：字符串优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性5：HTTP-2"><span class="nav-number">3.3.3.</span> <span class="nav-text">新特性5：HTTP/2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性6：接口中的私有方法"><span class="nav-number">3.3.4.</span> <span class="nav-text">新特性6：接口中的私有方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性7：进程增强API"><span class="nav-number">3.3.5.</span> <span class="nav-text">新特性7：进程增强API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性8：改进了Stream-API"><span class="nav-number">3.3.6.</span> <span class="nav-text">新特性8：改进了Stream API</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性9：集合类的工厂方法"><span class="nav-number">3.3.7.</span> <span class="nav-text">新特性9：集合类的工厂方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性10：Try-With-Resources改进"><span class="nav-number">3.3.8.</span> <span class="nav-text">新特性10：Try-With-Resources改进</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性11：多版本JAR"><span class="nav-number">3.3.9.</span> <span class="nav-text">新特性11：多版本JAR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性12：响应式流-Reactive-Streams"><span class="nav-number">3.3.10.</span> <span class="nav-text">新特性12：响应式流 Reactive Streams</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性13：代码分段缓存"><span class="nav-number">3.3.11.</span> <span class="nav-text">新特性13：代码分段缓存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#新特性14：其他新特性"><span class="nav-number">3.3.12.</span> <span class="nav-text">新特性14：其他新特性</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

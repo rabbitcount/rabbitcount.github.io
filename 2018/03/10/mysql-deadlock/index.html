@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="快捷入口  在 show engine innodb status\G 中查询 LATEST DETECTED DEADLOCK; 通过 SELECT * FROM information_schema.INNODB_LOCKS; 查询锁信息； begin, commit 的方式手动触发，复现问题   查看当前事务隔离级别1234567mysql&amp;gt; SELECT @@global.tx_i">
+<meta name="keywords" content="mysql,deadlock">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mysql 死锁的那些事儿">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/03/10/mysql-deadlock/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="快捷入口  在 show engine innodb status\G 中查询 LATEST DETECTED DEADLOCK; 通过 SELECT * FROM information_schema.INNODB_LOCKS; 查询锁信息； begin, commit 的方式手动触发，复现问题   查看当前事务隔离级别1234567mysql&amp;gt; SELECT @@global.tx_i">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="mysql 死锁的那些事儿">
+<meta name="twitter:description" content="快捷入口  在 show engine innodb status\G 中查询 LATEST DETECTED DEADLOCK; 通过 SELECT * FROM information_schema.INNODB_LOCKS; 查询锁信息； begin, commit 的方式手动触发，复现问题   查看当前事务隔离级别1234567mysql&amp;gt; SELECT @@global.tx_i">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/03/10/mysql-deadlock/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>mysql 死锁的那些事儿 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/03/10/mysql-deadlock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">mysql 死锁的那些事儿
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-03-10 16:46:55" itemprop="dateCreated datePublished" datetime="2018-03-10T16:46:55+08:00">2018-03-10</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>快捷入口</p>
+<ul>
+<li>在 <code>show engine innodb status\G</code> 中查询 <code>LATEST DETECTED DEADLOCK</code>;</li>
+<li>通过 <code>SELECT * FROM information_schema.INNODB_LOCKS;</code> 查询锁信息；</li>
+<li><code>begin</code>, <code>commit</code> 的方式手动触发，复现问题</li>
+</ul>
+</blockquote>
+<h1 id="查看当前事务隔离级别"><a href="#查看当前事务隔离级别" class="headerlink" title="查看当前事务隔离级别"></a>查看当前事务隔离级别</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; SELECT @@global.tx_isolation, @@session.tx_isolation, @@tx_isolation;</span><br><span class="line">+-----------------------+------------------------+----------------+</span><br><span class="line">| @@global.tx_isolation | @@session.tx_isolation | @@tx_isolation |</span><br><span class="line">+-----------------------+------------------------+----------------+</span><br><span class="line">| READ-COMMITTED        | READ-COMMITTED         | READ-COMMITTED |</span><br><span class="line">+-----------------------+------------------------+----------------+</span><br><span class="line">1 row in set (0.00 sec)</span><br></pre></td></tr></table></figure>
+<h1 id="查看当前数据库锁"><a href="#查看当前数据库锁" class="headerlink" title="查看当前数据库锁"></a>查看当前数据库锁</h1><h2 id="通过进程信息查询"><a href="#通过进程信息查询" class="headerlink" title="通过进程信息查询"></a>通过进程信息查询</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show full processlist</span><br></pre></td></tr></table></figure>
+<p>主要观察state和info</p>
+<h2 id="查询-innodb-status"><a href="#查询-innodb-status" class="headerlink" title="查询 innodb status"></a>查询 innodb status</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">show engine innodb status\G</span><br></pre></td></tr></table></figure>
+<p>重点关注 <code>TRANSACTIONS</code> 部分和 <code>LATEST DETECTED DEADLOCK</code> 两个部分；</p>
+<h3 id="通过-information-shcema-数据表查询"><a href="#通过-information-shcema-数据表查询" class="headerlink" title="通过 information_shcema 数据表查询"></a>通过 <code>information_shcema</code> 数据表查询</h3><ul>
+<li>innodb_trx        ：innodb内核中的当前活跃（ACTIVE）事务</li>
+<li>innodb_locks      ：当前状态产生的innodb锁 仅在有锁等待时</li>
+<li>innodb_lock_waits    ：当前状态产生的innodb锁等待 仅在有锁等待时</li>
+</ul>
+<h4 id="innodb-trx-表结构"><a href="#innodb-trx-表结构" class="headerlink" title="innodb_trx 表结构"></a>innodb_trx 表结构</h4><table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>说明                       </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>trx_id</td>
+<td>innodb存储引擎内部唯一的事物ID</td>
+</tr>
+<tr>
+<td>trx_state</td>
+<td>当前事物状态（running和lock wait两种状态）</td>
+</tr>
+<tr>
+<td>trx_started</td>
+<td>事物的开始时间 </td>
+</tr>
+<tr>
+<td>trx_requested_lock_id</td>
+<td>等待事物的锁ID，如trx_state的状态为Lock wait，那么该值带表当前事物等待之前事物占用资源的ID，若trx_state不是Lock wait 则该值为NULL</td>
+</tr>
+<tr>
+<td>trx_wait_started</td>
+<td>事物等待的开始时间</td>
+</tr>
+<tr>
+<td>trx_weight</td>
+<td>事物的权重，在innodb存储引擎中，当发生死锁需要回滚的时，innodb存储引擎会选择该值最小的进行回滚</td>
+</tr>
+<tr>
+<td>trx_mysql_thread_id</td>
+<td>mysql中的线程id, 即show  processlist显示的结果</td>
+</tr>
+<tr>
+<td>trx_query</td>
+<td>事物运行的SQL语句</td>
+</tr>
+</tbody>
+</table>
+<h4 id="innodb-locks-表结构"><a href="#innodb-locks-表结构" class="headerlink" title="innodb_locks 表结构"></a>innodb_locks 表结构</h4><table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>说明  </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lock_id</td>
+<td>锁的ID</td>
+</tr>
+<tr>
+<td>lock_trx_id</td>
+<td>事物的ID</td>
+</tr>
+<tr>
+<td>lock_mode</td>
+<td>锁的模式（S锁与X锁两种模式）</td>
+</tr>
+<tr>
+<td>lock_type</td>
+<td>锁的类型 表锁还是行锁（RECORD）</td>
+</tr>
+<tr>
+<td>lock_table</td>
+<td>要加锁的表</td>
+</tr>
+<tr>
+<td>lock_index</td>
+<td>锁住的索引</td>
+</tr>
+<tr>
+<td>lock_space</td>
+<td>锁住对象的space id</td>
+</tr>
+<tr>
+<td>lock_page</td>
+<td>事物锁定页的数量，若是表锁则该值为NULL</td>
+</tr>
+<tr>
+<td>lock_rec</td>
+<td>事物锁定行的数量，若是表锁则该值为NULL</td>
+</tr>
+<tr>
+<td>lock_data</td>
+<td>事物锁定记录主键值，若是表锁则该值为NULL（此选项不可信）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="innodb-lock-waits-表结构"><a href="#innodb-lock-waits-表结构" class="headerlink" title="innodb_lock_waits 表结构"></a>innodb_lock_waits 表结构</h4><table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>说明   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>requesting_trx_id</td>
+<td>申请锁资源的事物ID</td>
+</tr>
+<tr>
+<td>requested_lock_id</td>
+<td>申请的锁的ID</td>
+</tr>
+<tr>
+<td>blocking_trx_id</td>
+<td>阻塞其他事物的事物ID</td>
+</tr>
+<tr>
+<td>blocking_lock_id</td>
+<td>阻塞其他锁的锁ID</td>
+</tr>
+</tbody>
+</table>
+<h3 id="如何读-LATEST-DETECTED-DEADLOCK"><a href="#如何读-LATEST-DETECTED-DEADLOCK" class="headerlink" title="如何读 LATEST DETECTED DEADLOCK"></a>如何读 <code>LATEST DETECTED DEADLOCK</code></h3><p><code>LATEST DETECTED DEADLOCK</code> 中会记录最近一次死锁的信息，包含以下信息</p>
+<ul>
+<li>包含两个事务：TRANSACTION 119992026，TRANSACTION 119991521</li>
+<li>事务2026<ol>
+<li><font color="#0099ff"><em>等待</em></font> 一个行级的 <font color="#0099ff"><strong>X锁</strong></font> （<code>WAITING FOR ···· RECORD LOCKS ··· lock_mode X locks rec but not gap</code>）</li>
+</ol>
+</li>
+<li>事务1521<ol>
+<li><font color="#0099ff"><em>持有</em></font> 一个行级的 <font color="#0099ff"><strong>X锁</strong></font> （<code>HOLDS ··· RECORD LOCKS ··· lock_mode X locks rec but not gap</code>）</li>
+<li><font color="#0099ff"><em>等待</em></font> 一个行级的 <font color="#0099ff"><strong>S锁</strong></font> （<code>WAITING FOR THIS LOCK TO BE GRANTED ··· RECORD LOCKS ··· lock mode S waiting</code>）</li>
+</ol>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">------------------------</span><br><span class="line">LATEST DETECTED DEADLOCK</span><br><span class="line">------------------------</span><br><span class="line">2018-03-10 16:21:02 0x7f8ac30e1700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 119992026, ACTIVE 87 sec starting index read</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 2 lock struct(s), heap size 1136, 1 row lock(s)</span><br><span class="line">MySQL thread id 1462608, OS thread handle 140233934087936, query id 4903877046 172.26.182.190 root updating</span><br><span class="line">delete from ac_role_function WHERE (  role_id = 12287 and business_sys_id = 353 and tenant_code = &apos;1&apos; )</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119992026 lock_mode X locks rec but not gap waiting</span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 119991521, ACTIVE 149 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">4 lock struct(s), heap size 1136, 3 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 1462607, OS thread handle 140233954694912, query id 4903902025 172.26.182.190 root update</span><br><span class="line">insert into ac_role_function ( tenant_code, business_sys_id, role_id, function_id ) values ( &apos;1&apos;, 353, 12287, 2869 )</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119991521 lock_mode X locks rec but not gap</span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119991521 lock mode S waiting</span><br><span class="line">*** WE ROLL BACK TRANSACTION (1)</span><br></pre></td></tr></table></figure>
+<h1 id="🌰"><a href="#🌰" class="headerlink" title="🌰"></a>🌰</h1><h2 id="案发现场"><a href="#案发现场" class="headerlink" title="案发现场"></a>案发现场</h2><h3 id="innodb-status-中-deadlock-信息"><a href="#innodb-status-中-deadlock-信息" class="headerlink" title="innodb status 中 deadlock 信息"></a>innodb status 中 deadlock 信息</h3><p>事务2026占用X锁失败，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">------------------------</span><br><span class="line">LATEST DETECTED DEADLOCK</span><br><span class="line">------------------------</span><br><span class="line">2018-03-10 16:21:02 0x7f8ac30e1700</span><br><span class="line">*** (1) TRANSACTION:</span><br><span class="line">TRANSACTION 119992026, ACTIVE 87 sec starting index read</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">LOCK WAIT 2 lock struct(s), heap size 1136, 1 row lock(s)</span><br><span class="line">MySQL thread id 1462608, OS thread handle 140233934087936, query id 4903877046 172.26.182.190 root updating</span><br><span class="line">delete from ac_role_function WHERE (  role_id = 12287 and business_sys_id = 353 and tenant_code = &apos;1&apos; )</span><br><span class="line">*** (1) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119992026 lock_mode X locks rec but not gap waiting</span><br><span class="line">*** (2) TRANSACTION:</span><br><span class="line">TRANSACTION 119991521, ACTIVE 149 sec inserting</span><br><span class="line">mysql tables in use 1, locked 1</span><br><span class="line">4 lock struct(s), heap size 1136, 3 row lock(s), undo log entries 2</span><br><span class="line">MySQL thread id 1462607, OS thread handle 140233954694912, query id 4903902025 172.26.182.190 root update</span><br><span class="line">insert into ac_role_function ( tenant_code, business_sys_id, role_id, function_id ) values ( &apos;1&apos;, 353, 12287, 2869 )</span><br><span class="line">*** (2) HOLDS THE LOCK(S):</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119991521 lock_mode X locks rec but not gap</span><br><span class="line">*** (2) WAITING FOR THIS LOCK TO BE GRANTED:</span><br><span class="line">RECORD LOCKS space id 9190 page no 35 n bits 448 index unique_busi_tenant_role_fun of table `uac_test`.`ac_role_function` trx id 119991521 lock mode S waiting</span><br><span class="line">*** WE ROLL BACK TRANSACTION (1)</span><br></pre></td></tr></table></figure></p>
+<h3 id="业务系统记下了这个bug"><a href="#业务系统记下了这个bug" class="headerlink" title="业务系统记下了这个bug"></a>业务系统记下了这个bug</h3><blockquote>
+<p>Deadlock found when trying to get lock; try restarting transaction</p>
+</blockquote>
+<p>证据确凿，一个deadlock</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">### SQL: delete from ac_role_function WHERE (  role_id = ? and business_sys_id = ? and tenant_code = ? )</span><br><span class="line">### Cause: com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException: Deadlock found when trying to get lock; try restarting transaction</span><br><span class="line">; SQL []; Deadlock found when trying to get lock; try restarting transaction; nested exception is com.mysql.jdbc.exceptions.jdbc4.MySQLTransactionRollbackException: Deadlock found when trying to get lock; try restarting transaction</span><br><span class="line">        at org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator.doTranslate(SQLErrorCodeSQLExceptionTranslator.java:263)</span><br><span class="line">        at org.springframework.jdbc.support.AbstractFallbackSQLExceptionTranslator.translate(AbstractFallbackSQLExceptionTranslator.java:73)</span><br><span class="line">        at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:74)</span><br><span class="line">        at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:421)</span><br><span class="line">        at com.sun.proxy.$Proxy52.delete(Unknown Source)</span><br></pre></td></tr></table></figure>
+<h2 id="到底发生了什么"><a href="#到底发生了什么" class="headerlink" title="到底发生了什么"></a>到底发生了什么</h2><p>这段业务代码中在进行一个关联信息的保存操作</p>
+<ul>
+<li>按照上级先删除所有的关联信息；</li>
+<li>按照用户当前的配置，插入新的关联信息；</li>
+<li>关联信息建有唯一索引</li>
+</ul>
+<p>然后，坑出现了！！！</p>
+<ul>
+<li>删除操作需要占用资源的X锁</li>
+<li>执行插入操作前，需要占用资源的S锁；</li>
+</ul>
+<p>当请求并发执行时</p>
+<ul>
+<li>事务1：占用资源的X锁，删除资源；</li>
+<li>事务2：占用资源的X锁，删除资源（此时删除操作被挂起，等待X锁）</li>
+<li>事务1：执行插入操作，请求资源的S锁；</li>
+<li>事务1执行完成，事务2直接抛出deadlock</li>
+</ul>
+<h2 id="sql命令行验证下假想"><a href="#sql命令行验证下假想" class="headerlink" title="sql命令行验证下假想"></a>sql命令行验证下假想</h2><table>
+<thead>
+<tr>
+<th>时序</th>
+<th>事务1（1521）</th>
+<th>事务2（2026）</th>
+<th>锁状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>begin</td>
+<td>begin</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>delete from ac_role_function WHERE role_id = 12287 and business_sys_id = 353 and tenant_code = &#39;1&#39; ;</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td><code>delete from ac_role_function WHERE role_id = 12287 and business_sys_id = 353 and tenant_code = &#39;1&#39; ;</code></td>
+<td>事务1、事务2分别持有X锁，锁定索引相同</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>insert into ac_role_function ( tenant_code, business_sys_id, role_id, function_id ) values ( &#39;1&#39;, 353, 12287, 2869 );</code></td>
+<td></td>
+<td>事务2抛出deadlock，事务回滚</td>
+</tr>
+</tbody>
+</table>
+<h2 id="然后呢"><a href="#然后呢" class="headerlink" title="然后呢"></a>然后呢</h2><p>在这个案例中</p>
+<ul>
+<li>数据是用户自身的，请求并不需要并行执行 –》 前端串行化</li>
+<li>X锁和S锁的矛盾源头是保存操作中，不管三七二十一的删了重新插入，导致每个请求都需要针对这些资源同时申请X锁和S锁 –》 拆分保存操作，只保存实际新增的，只删除实际需要移除的，不修改未发生变更的数据（基于log的数据同步也能降低些压力）；</li>
+</ul>
+<h1 id="再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）"><a href="#再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）" class="headerlink" title="再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）"></a>再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）</h1><p><span class="exturl" data-url="aHR0cDovL3d3dy40ZTAwLmNvbS9ibG9nL215c3FsLzIwMTcvMDkvMTYvbXlzcWwtZGVhZGxvY2std2hlbi1jb25jdXJyZW50LWluc2VydC5odG1s" title="http://www.4e00.com/blog/mysql/2017/09/16/mysql-deadlock-when-concurrent-insert.html">引自：mysql deadlock when concurrent insert<i class="fa fa-external-link"></i></span></p>
+<h2 id="案发现场-1"><a href="#案发现场-1" class="headerlink" title="案发现场"></a>案发现场</h2><p>应用程序集群有3台机器，由于并发的问题，3台机器同时往数据里插入记录，并且在插入数据过程有其他的数据校验，因为数据校验失败，事务需要回滚，而导致死锁产生。</p>
+<h2 id="案件重演"><a href="#案件重演" class="headerlink" title="案件重演"></a>案件重演</h2><p>三个事务并发执行插入请求，分别请求X锁；<br>事务T1发生回滚后</p>
+<ul>
+<li>事务T3抢到X锁，执行成功；</li>
+<li>事务T2没有抢到X锁，发生死锁，事务回滚</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>T1(140104)</th>
+<th>T2(140105)</th>
+<th>T3(140106) </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BEGIN;</td>
+<td>BEGIN;</td>
+<td>BEGIN; </td>
+</tr>
+<tr>
+<td><code>INSERT INTO deadlock(a,b,c) VALUES(1,2,4);</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><code>INSERT INTO deadlock(a,b,c) VALUES(1,2,4);</code></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td><code>INSERT INTO deadlock(a,b,c) VALUES(1,2,4);</code></td>
+</tr>
+<tr>
+<td>ROLLBACK;</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td>Query OK, 1 row affected (13.10 sec)      </td>
+</tr>
+<tr>
+<td></td>
+<td>ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>如果T1没有发生回滚，T2、T3会报唯一主键冲突；</p>
+</blockquote>
+<h2 id="看看他们是怎么处理的"><a href="#看看他们是怎么处理的" class="headerlink" title="看看他们是怎么处理的"></a>看看他们是怎么处理的</h2><ul>
+<li>避免此DEADLOCK<br>我们都知道死锁的问题通常都是业务处理的逻辑造成的，既然是uniq key，同时多台不同服务器上的相同程序对其 INSERT 一模一样的value，这本身逻辑就不太完美。</li>
+<li>故解决此问题：<ol>
+<li>保证业务程序别再同一时间点并发的插入相同的值到相同的uniq key的表中</li>
+<li>上述实验可知，是由于第一个事务ROLLBACK了才产生的DEADLOCK，查明ROLLBACK的原因</li>
+<li>尽量减少完成事务的时间</li>
+</ol>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"># mysql</a>
+          
+            <a href="/tags/deadlock/" rel="tag"># deadlock</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/10/mysql-lock-and-transaction/" rel="next" title="mysql的那些事儿（锁、事务）">
+                <i class="fa fa-chevron-left"></i> mysql的那些事儿（锁、事务）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/10/spring-interceptor-vs-filter/" rel="prev" title="spring interceptor vs filter">
+                spring interceptor vs filter <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#查看当前事务隔离级别"><span class="nav-number">1.</span> <span class="nav-text">查看当前事务隔离级别</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#查看当前数据库锁"><span class="nav-number">2.</span> <span class="nav-text">查看当前数据库锁</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#通过进程信息查询"><span class="nav-number">2.1.</span> <span class="nav-text">通过进程信息查询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#查询-innodb-status"><span class="nav-number">2.2.</span> <span class="nav-text">查询 innodb status</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#通过-information-shcema-数据表查询"><span class="nav-number">2.2.1.</span> <span class="nav-text">通过 information_shcema 数据表查询</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb-trx-表结构"><span class="nav-number">2.2.1.1.</span> <span class="nav-text">innodb_trx 表结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb-locks-表结构"><span class="nav-number">2.2.1.2.</span> <span class="nav-text">innodb_locks 表结构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#innodb-lock-waits-表结构"><span class="nav-number">2.2.1.3.</span> <span class="nav-text">innodb_lock_waits 表结构</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何读-LATEST-DETECTED-DEADLOCK"><span class="nav-number">2.2.2.</span> <span class="nav-text">如何读 LATEST DETECTED DEADLOCK</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#🌰"><span class="nav-number">3.</span> <span class="nav-text">🌰</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#案发现场"><span class="nav-number">3.1.</span> <span class="nav-text">案发现场</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#innodb-status-中-deadlock-信息"><span class="nav-number">3.1.1.</span> <span class="nav-text">innodb status 中 deadlock 信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#业务系统记下了这个bug"><span class="nav-number">3.1.2.</span> <span class="nav-text">业务系统记下了这个bug</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#到底发生了什么"><span class="nav-number">3.2.</span> <span class="nav-text">到底发生了什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sql命令行验证下假想"><span class="nav-number">3.3.</span> <span class="nav-text">sql命令行验证下假想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#然后呢"><span class="nav-number">3.4.</span> <span class="nav-text">然后呢</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）"><span class="nav-number">4.</span> <span class="nav-text">再来个🌰，多线程插入数据引起的死锁回滚（唯一索引场景）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#案发现场-1"><span class="nav-number">4.1.</span> <span class="nav-text">案发现场</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案件重演"><span class="nav-number">4.2.</span> <span class="nav-text">案件重演</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#看看他们是怎么处理的"><span class="nav-number">4.3.</span> <span class="nav-text">看看他们是怎么处理的</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

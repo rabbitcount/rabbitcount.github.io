@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="java.lang.instrument包，VirtualMachine, InstrumentationImpl, ClassFileTransformer，及实现原理；启动Agent的三种方式  命令行启动：-javaagent VM进程启动后运行加载Agent 在可执行的jar包中包含agent">
+<meta name="keywords" content="jvm,javaagent">
+<meta property="og:type" content="article">
+<meta property="og:title" content="初识 java.lang.instrument 包">
+<meta property="og:url" content="http://wiki.anocelot.cn/2019/01/07/java-lang-instrument/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="java.lang.instrument包，VirtualMachine, InstrumentationImpl, ClassFileTransformer，及实现原理；启动Agent的三种方式  命令行启动：-javaagent VM进程启动后运行加载Agent 在可执行的jar包中包含agent">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-instrument-call-premain.png">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-lang-instrument-call-agentmain.png">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-instrument-Instrumention.png">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="初识 java.lang.instrument 包">
+<meta name="twitter:description" content="java.lang.instrument包，VirtualMachine, InstrumentationImpl, ClassFileTransformer，及实现原理；启动Agent的三种方式  命令行启动：-javaagent VM进程启动后运行加载Agent 在可执行的jar包中包含agent">
+<meta name="twitter:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-instrument-call-premain.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2019/01/07/java-lang-instrument/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>初识 java.lang.instrument 包 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/01/07/java-lang-instrument/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">初识 java.lang.instrument 包
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-01-07 17:33:01" itemprop="dateCreated datePublished" datetime="2019-01-07T17:33:01+08:00">2019-01-07</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>java.lang.instrument包，<code>VirtualMachine, InstrumentationImpl, ClassFileTransformer</code>，及实现原理；<br>启动Agent的三种方式</p>
+<ol>
+<li>命令行启动：-javaagent</li>
+<li>VM进程启动后运行加载Agent</li>
+<li>在可执行的jar包中包含agent<a id="more"></a>
+</li>
+</ol>
+<hr>
+<h1 id="初识-instrument"><a href="#初识-instrument" class="headerlink" title="初识 instrument"></a>初识 instrument</h1><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzEwL2RvY3MvYXBpL2phdmEvbGFuZy9pbnN0cnVtZW50L3BhY2thZ2Utc3VtbWFyeS5odG1s" title="https://docs.oracle.com/javase/10/docs/api/java/lang/instrument/package-summary.html">Package java.lang.instrument<i class="fa fa-external-link"></i></span></p>
+<p>Provides services that allow Java programming language agents to instrument programs running on the JVM. The mechanism for instrumentation is modification of the byte-codes of methods.<br>An agent is deployed as a JAR file. An attribute in the JAR file manifest specifies the agent class which will be loaded to start the agent. </p>
+<h2 id="Java-Instrument能做什么？最大的作用？"><a href="#Java-Instrument能做什么？最大的作用？" class="headerlink" title="Java Instrument能做什么？最大的作用？"></a>Java Instrument能做什么？最大的作用？</h2><ul>
+<li>使开发者可以构建一个独立于应用程序的代理程序Agent，<code>用来监控和协助运行在JVM上的程序，更重要的是能够替换和修改某些类的定义</code>；</li>
+<li>最大的作用：可以实现一种虚拟机级别支持的AOP实现方式；</li>
+</ul>
+<h2 id="在JDK-1-5-、1-6中，Java-Instrument做了哪些变动支持？"><a href="#在JDK-1-5-、1-6中，Java-Instrument做了哪些变动支持？" class="headerlink" title="在JDK 1.5 、1.6中，Java Instrument做了哪些变动支持？"></a>在JDK 1.5 、1.6中，Java Instrument做了哪些变动支持？</h2><ul>
+<li>JDK 1.5：支持 <strong>静态</strong> Instrument，就是在JVM启动前静态设置Instrument；</li>
+<li>JDK 1.6：支持 <strong>动态</strong> Instrument，就是在JVM启动后动态设置Instrument；支持本地代码Instrument；支持动态改变classpath；</li>
+</ul>
+<h2 id="Java-Instrument的实现是基于JVM哪种机制？JVM-TI是什么，可以做什么？"><a href="#Java-Instrument的实现是基于JVM哪种机制？JVM-TI是什么，可以做什么？" class="headerlink" title="Java Instrument的实现是基于JVM哪种机制？JVM TI是什么，可以做什么？"></a>Java Instrument的实现是基于JVM哪种机制？JVM TI是什么，可以做什么？</h2><blockquote>
+<p>基于JVMTI代理程序；<br>JVM TI：一套代理程序机制，为JVM相关工具提供的本地编程接口集合；<br>JVM TI可以支持第三方工具程序以代理的方式连接和访问JVM，并利用JVMTI提供的丰富的编程接口，完成很多跟JVM相关的功能；</p>
+</blockquote>
+<h2 id="premain、agentmain方法执行时机？"><a href="#premain、agentmain方法执行时机？" class="headerlink" title="premain、agentmain方法执行时机？"></a>premain、agentmain方法执行时机？</h2><ul>
+<li>premain执行时机<br>在JVM启动时，初始化函数<code>eventHandlerVMinit</code>会调用<code>sun.instrument.InstrumentationImpl</code>类的<code>loadClassAndCallPremain</code>方法，执行Premain-Class指定类的premain方法；<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-instrument-call-premain.png" alt></li>
+<li>agentmain执行时机<br>在JVM启动后，通过 <code>com.sun.tools.attach.VirtualMachine.loadAgent</code> 附着一个Instrument，如：<code>vm.loadAgent(jar)</code>，会调用<code>sun.instrument.InstrumentationImpl</code>类的<code>loadClassAndCallAgentmain</code>方法去执行Agentmain-Class指定类的agentmain方法；<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-lang-instrument-call-agentmain.png" alt></li>
+</ul>
+<h2 id="premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？"><a href="#premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？" class="headerlink" title="premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？"></a>premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？</h2><ul>
+<li>agentArgs<br>代理程序命令行中输入参数，随同<code>-javaagent</code>一起传入，与main函数不同的是，这个参数是一个 <strong>字符串</strong> 而不是一个字符串数组；</li>
+<li>inst<br><code>java.lang.instrument.Instrumentation</code>实例，由JVM自动传入，集中了几乎所有功能方法，如：类操作、classpath操作等；</li>
+</ul>
+<h2 id="java-lang-instrument-ClassFileTransformer是什么，有什么作用？"><a href="#java-lang-instrument-ClassFileTransformer是什么，有什么作用？" class="headerlink" title="java.lang.instrument.ClassFileTransformer是什么，有什么作用？"></a>java.lang.instrument.ClassFileTransformer是什么，有什么作用？</h2><ul>
+<li><code>ClassFileTransformer</code> 当中的 <code>transform</code> 方法可以对类定义进行操作修改；</li>
+<li>在类字节码载入JVM前，JVM会调用<code>ClassFileTransformer.transform</code> 方法，从而实现对类定义进行操作修改，实现AOP功能；相对于JDK 动态代理、CGLIB等AOP实现技术，不会生成新类，也不需要原类有接口；</li>
+</ul>
+<h2 id="对于agentmain方法执行，如何进行动态attach-agent？"><a href="#对于agentmain方法执行，如何进行动态attach-agent？" class="headerlink" title="对于agentmain方法执行，如何进行动态attach agent？"></a>对于agentmain方法执行，如何进行动态attach agent？</h2><blockquote>
+<p>通过<code>VirtualMachine</code> 加载一个 <code>Agent</code>，如：<code>vm.loadAgent(jar)</code>；</p>
+</blockquote>
+<h2 id="META-INF-MAINFEST-MF参数清单？"><a href="#META-INF-MAINFEST-MF参数清单？" class="headerlink" title="META-INF/MAINFEST.MF参数清单？"></a>META-INF/MAINFEST.MF参数清单？</h2><ul>
+<li><code>Premain-Class</code>：指定包含premain方法的类名；</li>
+<li><code>Agent-Class</code>：指定包含agentmain方法的类名；</li>
+<li><code>Boot-Class-Path</code>：指定引导类加载器搜索的路径列表。查找类的特点于平台的机制失败后，引导类加载器会搜索这些路径；</li>
+<li><code>Can-Redefine-Class</code>：是否能重新定义此代理所需的类，默认为false；</li>
+<li><code>Can-Retransform-Class</code>：是否能重新转换此代理所需的类，默认为false；</li>
+<li><code>Can-Set-Native-Method-Prefix</code>：是否能设置此代理所需的本机方法前缀，默认值为false；</li>
+</ul>
+<h2 id="两个核心API-ClassFileTransformer、Instrumention？"><a href="#两个核心API-ClassFileTransformer、Instrumention？" class="headerlink" title="两个核心API ClassFileTransformer、Instrumention？"></a>两个核心API ClassFileTransformer、Instrumention？</h2><ul>
+<li>ClassFileTransformer：定义了类加载前的预处理类；</li>
+<li>Instrumentation：增强器<ol>
+<li><code>add/removeTransformer</code>：添加/删除 <code>ClasFileTransformer</code>；</li>
+<li><code>retransformerClasses</code>：指定哪些类，在已加载的情况下，重新进行转换处理，即触发重新加载类定义；对于重新加载的类不能修改旧有的类声明，比如：不能增加属性、不能修改方法声明等；</li>
+<li>redefineClasses：指定哪些类，触发重新加载类定义，与上面不同的是不会重新进行转换处理，而是把处理结果bytecode直接给JVM；</li>
+<li>getAllLoadedClasses：获取当前已加载的Class集合；</li>
+<li>getInitiatedClasses：获取由某个特定ClassLoader加载的类定义；</li>
+<li>getObjectSize：获得一个对象占用的空间大小</li>
+<li>appendToBootstrapClassLoaderSearch/appentToSystemClassLoaderSearch：增加BootstrapClassLoader/SystemClassLoader搜索路径；</li>
+<li>isNativeMethodPrefixSupported/SetNativeMethodPrefix：判断JVM是否支持拦截Native Method；<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-07-java-lang-instrument/java-instrument-Instrumention.png" alt></li>
+</ol>
+</li>
+</ul>
+<h2 id="Java-Instrument工作原理"><a href="#Java-Instrument工作原理" class="headerlink" title="Java Instrument工作原理"></a>Java Instrument工作原理</h2><h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><ol>
+<li>在JVM启动时，通过JVM参数<code>-javaagent</code>，传入agent jar，Instrument Agent被加载；</li>
+<li>在Instrument Agent 初始化时，注册了 JVM TI 初始化函数 <code>eventHandlerVMInit</code>；</li>
+<li>在JVM启动时，会调用初始化函数<code>eventHandlerVMInit</code>，启动了<code>Instrument Agent，用</code>sun.instrument.InstrumentationImpl<code>类里的方法</code>loadClassAndCallPremain<code>方法去初始化</code>Premain-Class<code>指定类的</code>premain` 方法；</li>
+<li>初始化函数<code>eventHandlerVMinit</code>，注册了class解析的<code>ClassFileLoadHook</code>函数；</li>
+<li>在解析Class之前，JVM调用 JVM TI 的 <code>ClassFileLoadHook</code> 函数，钩子函数调用<code>sun.instrument.InstrumentationImpl</code>类里的<code>transform</code>方法，通过<code>TransformerManager的transformer</code>方法最终调用我们自定义（Custom）的Transformer类的transform方法；</li>
+<li>因为字节码在解析Class之前改的，直接使用修改后的字节码的数据流替代，最后进入Class解析，对整个Class解析无影响；</li>
+<li>重新加载Class依然重新走5-6步骤；</li>
+</ol>
+<blockquote>
+<p>支持回调的两个阶段</p>
+</blockquote>
+<h3 id="依赖函数"><a href="#依赖函数" class="headerlink" title="依赖函数"></a>依赖函数</h3><p>依赖函数 <code>eventHandlerVMInit</code>， <code>eventHandlerClassFileLoadHook</code>说明；<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> *  src/java.instrument/share/native/libinstrument/InvocationAdapter.c</span></span><br><span class="line"><span class="comment"> *  JVMTI callback support</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  We have two "stages" of callback support.</span></span><br><span class="line"><span class="comment"> *  At OnLoad time, we install a VMInit handler.</span></span><br><span class="line"><span class="comment"> *  When the VMInit handler runs, we remove the VMInit handler and install a</span></span><br><span class="line"><span class="comment"> *  ClassFileLoadHook handler.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">void</span> JNICALL</span><br><span class="line">eventHandlerVMInit( jvmtiEnv *      jvmtienv,</span><br><span class="line">                    JNIEnv *        jnienv,</span><br><span class="line">                    jthread         thread) &#123;</span><br><span class="line">                    </span><br><span class="line"><span class="keyword">void</span> JNICALL</span><br><span class="line">eventHandlerClassFileLoadHook(  jvmtiEnv *              jvmtienv,</span><br><span class="line">                                JNIEnv *                jnienv,</span><br><span class="line">                                jclass                  class_being_redefined,</span><br><span class="line">                                jobject                 loader,</span><br><span class="line">                                <span class="keyword">const</span> <span class="keyword">char</span>*             name,</span><br><span class="line">                                jobject                 protectionDomain,</span><br><span class="line">                                jint                    class_data_len,</span><br><span class="line">                                <span class="keyword">const</span> <span class="keyword">unsigned</span> <span class="keyword">char</span>*    class_data,</span><br><span class="line">                                jint*                   new_class_data_len,</span><br><span class="line">                                <span class="keyword">unsigned</span> <span class="keyword">char</span>**         new_class_data) &#123;</span><br></pre></td></tr></table></figure></p>
+<h1 id="启动-Agent-的三种方式"><a href="#启动-Agent-的三种方式" class="headerlink" title="启动 Agent 的三种方式"></a>启动 Agent 的三种方式</h1><h2 id="命令行启动Agent"><a href="#命令行启动Agent" class="headerlink" title="命令行启动Agent"></a>命令行启动Agent</h2><p>在命令行中增加option：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-javaagent:&lt;jarpath&gt;[=&lt;options&gt;]</span><br></pre></td></tr></table></figure></p>
+<h2 id="VM-启动后运行-Agent"><a href="#VM-启动后运行-Agent" class="headerlink" title="VM 启动后运行 Agent"></a>VM 启动后运行 Agent</h2><h2 id="Agent在可执行的jar包中"><a href="#Agent在可执行的jar包中" class="headerlink" title="Agent在可执行的jar包中"></a>Agent在可执行的jar包中</h2><p>MANIFEST 中需要包含 <code>Launcher-Agent-Class</code> </p>
+<h2 id="编写-Agent"><a href="#编写-Agent" class="headerlink" title="编写 Agent"></a>编写 Agent</h2><p>在三种启动方式中，都需要预先生成 Agent 的 jar 包。</p>
+<ol>
+<li>Agent 的 jar 包的MANIFEST.MF文件中，必须包含 <code>Agent-class</code> 属性，指明 agent class。</li>
+<li><code>agent class</code>必须实现 <code>public static agentmain</code> 方法；</li>
+</ol>
+<h3 id="Agent-类方法"><a href="#Agent-类方法" class="headerlink" title="Agent 类方法"></a>Agent 类方法</h3><p>agentmain方法拥有以下两种重构形态，JVM会首先尝试访问双参数的方法，访问失败后，会尝试访问单参数的函数版本；<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">agentmain</span><span class="params">(String agentArgs, Instrumentation inst)</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">agentmain</span><span class="params">(String agentArgs)</span></span></span><br></pre></td></tr></table></figure></p>
+<p>如果通过命令行方式启动agent，agent class可能包含 <code>premain</code> 方法；当agent晚于VM启动时，不会访问 <code>premain</code> 方法；<br>agent 通过 agentArgs 参数，传递 option 参数</p>
+<h3 id="生成-MANIFEST"><a href="#生成-MANIFEST" class="headerlink" title="生成 MANIFEST"></a>生成 MANIFEST</h3><h4 id="MANIFEST-文档配置"><a href="#MANIFEST-文档配置" class="headerlink" title="MANIFEST 文档配置"></a>MANIFEST 文档配置</h4><p><code>META-INF -&gt; MANIFEST.MF</code> 文件中，<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Agent-Class: $&#123;full-path-of-Agent-class&#125;</span><br><span class="line">Can-Redefine-Classes: true</span><br><span class="line">Can-Retransform-Classes: true</span><br><span class="line">Manifest-Version: 1.0</span><br><span class="line">Permissions: all-permissions</span><br></pre></td></tr></table></figure></p>
+<h4 id="通过-Maven-插件生成"><a href="#通过-Maven-插件生成" class="headerlink" title="通过 Maven 插件生成"></a>通过 Maven 插件生成</h4><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-assembly-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">executions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">execution</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">id</span>&gt;</span>make-assembly<span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">phase</span>&gt;</span>package<span class="tag">&lt;/<span class="name">phase</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">goals</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">goal</span>&gt;</span>single<span class="tag">&lt;/<span class="name">goal</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">goals</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">archive</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Agent-Class</span>&gt;</span>$&#123;full-path-of-Agent-class&#125;<span class="tag">&lt;/<span class="name">Agent-Class</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Can-Redefine-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Redefine-Classes</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Can-Retransform-Classes</span>&gt;</span>true<span class="tag">&lt;/<span class="name">Can-Retransform-Classes</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Manifest-Version</span>&gt;</span>1.0<span class="tag">&lt;/<span class="name">Manifest-Version</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">Permissions</span>&gt;</span>all-permissions<span class="tag">&lt;/<span class="name">Permissions</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;/<span class="name">manifestEntries</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">archive</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">descriptorRef</span>&gt;</span>jar-with-dependencies<span class="tag">&lt;/<span class="name">descriptorRef</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">descriptorRefs</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">execution</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">executions</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.maven.plugins<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>maven-compiler-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.8.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">source</span>&gt;</span>8<span class="tag">&lt;/<span class="name">source</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">target</span>&gt;</span>8<span class="tag">&lt;/<span class="name">target</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>其中 maven-compiler-plugin 的配置不是必须的，但是由于Agent需要区分1.6前或1.6后，所以建议指定jdk的版本；<br>执行 <code>mvn clean package</code> 后，生成的jar包为 <code>\*-jar-with-dependencies.jar</code></p>
+<h3 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h3><blockquote>
+<p>The agentmain method should do any necessary initialization required to start the agent. When startup is complete the method should return. If the agent cannot be started (for example, because the agent class cannot be loaded, or because the agent class does not have a conformant agentmain method), the JVM will not abort. If the agentmain method throws an uncaught exception it will be ignored (but may be logged by the JVM for troubleshooting purposes).</p>
+</blockquote>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jvm/" rel="tag"># jvm</a>
+          
+            <a href="/tags/javaagent/" rel="tag"># javaagent</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/03/java-dynamic-bytecode/" rel="next" title="java动态字节码技术">
+                <i class="fa fa-chevron-left"></i> java动态字节码技术
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/09/manifest-of-java-project/" rel="prev" title="MANIFEST of Java Project">
+                MANIFEST of Java Project <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#初识-instrument"><span class="nav-number">1.</span> <span class="nav-text">初识 instrument</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-Instrument能做什么？最大的作用？"><span class="nav-number">1.1.</span> <span class="nav-text">Java Instrument能做什么？最大的作用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在JDK-1-5-、1-6中，Java-Instrument做了哪些变动支持？"><span class="nav-number">1.2.</span> <span class="nav-text">在JDK 1.5 、1.6中，Java Instrument做了哪些变动支持？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-Instrument的实现是基于JVM哪种机制？JVM-TI是什么，可以做什么？"><span class="nav-number">1.3.</span> <span class="nav-text">Java Instrument的实现是基于JVM哪种机制？JVM TI是什么，可以做什么？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#premain、agentmain方法执行时机？"><span class="nav-number">1.4.</span> <span class="nav-text">premain、agentmain方法执行时机？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？"><span class="nav-number">1.5.</span> <span class="nav-text">premain、agentmain方法中两个参数agentArgs、inst代表什么？分别会有什么作用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#java-lang-instrument-ClassFileTransformer是什么，有什么作用？"><span class="nav-number">1.6.</span> <span class="nav-text">java.lang.instrument.ClassFileTransformer是什么，有什么作用？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对于agentmain方法执行，如何进行动态attach-agent？"><span class="nav-number">1.7.</span> <span class="nav-text">对于agentmain方法执行，如何进行动态attach agent？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#META-INF-MAINFEST-MF参数清单？"><span class="nav-number">1.8.</span> <span class="nav-text">META-INF/MAINFEST.MF参数清单？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#两个核心API-ClassFileTransformer、Instrumention？"><span class="nav-number">1.9.</span> <span class="nav-text">两个核心API ClassFileTransformer、Instrumention？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-Instrument工作原理"><span class="nav-number">1.10.</span> <span class="nav-text">Java Instrument工作原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#实现原理"><span class="nav-number">1.10.1.</span> <span class="nav-text">实现原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#依赖函数"><span class="nav-number">1.10.2.</span> <span class="nav-text">依赖函数</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#启动-Agent-的三种方式"><span class="nav-number">2.</span> <span class="nav-text">启动 Agent 的三种方式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#命令行启动Agent"><span class="nav-number">2.1.</span> <span class="nav-text">命令行启动Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#VM-启动后运行-Agent"><span class="nav-number">2.2.</span> <span class="nav-text">VM 启动后运行 Agent</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Agent在可执行的jar包中"><span class="nav-number">2.3.</span> <span class="nav-text">Agent在可执行的jar包中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编写-Agent"><span class="nav-number">2.4.</span> <span class="nav-text">编写 Agent</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Agent-类方法"><span class="nav-number">2.4.1.</span> <span class="nav-text">Agent 类方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#生成-MANIFEST"><span class="nav-number">2.4.2.</span> <span class="nav-text">生成 MANIFEST</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MANIFEST-文档配置"><span class="nav-number">2.4.2.1.</span> <span class="nav-text">MANIFEST 文档配置</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#通过-Maven-插件生成"><span class="nav-number">2.4.2.2.</span> <span class="nav-text">通过 Maven 插件生成</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#补充"><span class="nav-number">2.4.3.</span> <span class="nav-text">补充</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

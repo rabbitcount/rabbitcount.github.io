@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="摘要「rwnd」：接收窗口「cwnd」：拥塞窗口「ssthresh」：慢启动阈值  引自：TCP 协议中的 Window Size与吞吐量 TCP协议中影响实际业务流量的参数很多，这里主要分析一下窗口的影响。 ​TCP窗口目的为了获得最优的连接速率，使用TCP窗口来控制流速率（flow control），滑动窗口就是一种主要的机制。这个窗口允许源端在给定连接传送数据分段而不用等待目标端返回ACK，">
+<meta name="keywords" content="tcp,tcp窗口">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP 协议中的 Window Size与吞吐量">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/03/04/tcp-window-size/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="摘要「rwnd」：接收窗口「cwnd」：拥塞窗口「ssthresh」：慢启动阈值  引自：TCP 协议中的 Window Size与吞吐量 TCP协议中影响实际业务流量的参数很多，这里主要分析一下窗口的影响。 ​TCP窗口目的为了获得最优的连接速率，使用TCP窗口来控制流速率（flow control），滑动窗口就是一种主要的机制。这个窗口允许源端在给定连接传送数据分段而不用等待目标端返回ACK，">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E7%AA%97%E5%8F%A3%E6%BB%91%E5%8A%A8%E5%8F%91%E9%80%81%E6%95%B0%E6%8D%AE.jpg">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/wireshark%E6%8A%93%E5%8C%85%E5%AE%9E%E4%BE%8B.jpeg">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%B5%81%E9%87%8F%E6%8E%A7%E5%88%B6.jpeg">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%8B%A5%E5%A1%9E%E7%AA%97%E5%8F%A3%E6%89%A9%E5%A4%A7.jpeg">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%8B%A5%E5%A1%9E%E7%AA%97%E5%8F%A3%E4%B8%8E%E4%B8%A2%E5%8C%85.jpeg">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E8%AE%BE%E7%BD%AEcwnd.jpeg">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="TCP 协议中的 Window Size与吞吐量">
+<meta name="twitter:description" content="摘要「rwnd」：接收窗口「cwnd」：拥塞窗口「ssthresh」：慢启动阈值  引自：TCP 协议中的 Window Size与吞吐量 TCP协议中影响实际业务流量的参数很多，这里主要分析一下窗口的影响。 ​TCP窗口目的为了获得最优的连接速率，使用TCP窗口来控制流速率（flow control），滑动窗口就是一种主要的机制。这个窗口允许源端在给定连接传送数据分段而不用等待目标端返回ACK，">
+<meta name="twitter:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E7%AA%97%E5%8F%A3%E6%BB%91%E5%8A%A8%E5%8F%91%E9%80%81%E6%95%B0%E6%8D%AE.jpg">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/03/04/tcp-window-size/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>TCP 协议中的 Window Size与吞吐量 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/03/04/tcp-window-size/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">TCP 协议中的 Window Size与吞吐量
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-03-04 17:50:39" itemprop="dateCreated datePublished" datetime="2018-03-04T17:50:39+08:00">2018-03-04</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h1><p>「rwnd」：接收窗口<br>「cwnd」：拥塞窗口<br>「ssthresh」：慢启动阈值</p>
+<hr>
+<p><span class="exturl" data-url="aHR0cDovL2Jsb2cuc2luYS5jb20uY24vcy9ibG9nX2M1YzJkNjY5MDEwMndweGwuaHRtbA==" title="http://blog.sina.com.cn/s/blog_c5c2d6690102wpxl.html">引自：TCP 协议中的 Window Size与吞吐量<i class="fa fa-external-link"></i></span></p>
+<p>TCP协议中影响实际业务流量的参数很多，这里主要分析一下窗口的影响。</p>
+<h1 id="​TCP窗口目的"><a href="#​TCP窗口目的" class="headerlink" title="​TCP窗口目的"></a>​TCP窗口目的</h1><p>为了获得最优的连接速率，使用TCP窗口来控制流速率（flow control），滑动窗口就是一种主要的机制。<br>这个窗口允许源端在给定连接传送数据分段而不用等待目标端返回ACK，一句话描述：</p>
+<blockquote>
+<p>窗口的大小决定在不需要对端响应（acknowledgement）情况下传送数据的数量。</p>
+</blockquote>
+<p>​官方定义：“<font color="#0099ff">The amount of octets that can be transmitted without receiving an acknowledgement from the other side</font>”。</p>
+<h2 id="TCP窗口机制-接收窗口「rwnd」"><a href="#TCP窗口机制-接收窗口「rwnd」" class="headerlink" title="TCP窗口机制 - 接收窗口「rwnd」"></a>TCP窗口机制 - 接收窗口「rwnd」</h2><p>​​<code>TCP header</code>中有一个<code>Window Size</code>字段，它其实是指接收端的窗口，即接收窗口(<font color="#0099ff">「rwnd」</font>)，用来告知发送端自己所能接收的数据量，从而达到一部分流控的目的。其实TCP在整个发送过程中，也在度量当前的网络状态，目的是为了维持一个健康稳定的发送过程，比如拥塞控制。因此，数据是在某些机制的控制下进行传输的，就是窗口机制。发送端的发送窗口是基于接收端的接收窗口来计算的，也就是我们常说的TCP是有连接的发送，数据传输需要对端确认，发送的数据分为如下四类来看</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E7%AA%97%E5%8F%A3%E6%BB%91%E5%8A%A8%E5%8F%91%E9%80%81%E6%95%B0%E6%8D%AE.jpg" alt>窗口滑动发送数据</p>
+<ul>
+<li>已经发送并且对端确认（<strong>Sent/ACKed</strong>）：发送窗外缓冲区外</li>
+<li>已经发送但未收到确认数据（<strong>Sent/UnACKed</strong>）： 发送窗内缓冲区内​</li>
+<li>允许发送但尚未防的数据​（<strong>Unsent/Inside</strong>）： 发送窗内缓冲区内​</li>
+<li>未发送暂不允许（<strong>Unsent/Outside</strong>）： 发送窗外缓冲区内​</li>
+</ul>
+<p>TCP窗口就是这样逐渐滑动，发送新的数据，滑动的依据就是发送数据已经收到ACK，确认对端收到，才能继续窗口滑动发送新的数据。可以看到窗口大小对于吞吐量有着重要影响，同时ACK响应与系统延时又密切相关。</p>
+<p>需要说明的是：</p>
+<ul>
+<li>发送端的窗口过大：会引起接收端关闭窗口，处理不过来；</li>
+<li>发送端的窗口设置较小：结果就是不能充分利用带宽；</li>
+</ul>
+<p>所以仔细调节窗口对于适应不同延迟和带宽要求的系统很重要。</p>
+<h2 id="TCP接收窗口「rwnd」大小"><a href="#TCP接收窗口「rwnd」大小" class="headerlink" title="TCP接收窗口「rwnd」大小"></a>TCP接收窗口「rwnd」大小</h2><p>最早<code>TCP</code>协议涉及用来大范围网络传输时候，其实是没有超过<code>56Kb/s</code>的​连接速度的。因此，<code>TCP</code>包头中只保留了<code>16bit</code>用来标识窗口大小，允许的最大缓存大小不超过<code>64KB</code>。为了打破这一限制，<code>RFC1323</code>规定了TCP窗口尺寸选择，是在TCP连接开始的时候三步握手的时候协商的（<strong>SYN, SYN-ACK, ACK</strong>），会协商一个  <code>Window size scaling factor</code>，之后交互数据中的是<code>Window size value</code>，所以最终的窗口大小是二者的乘积.</p>
+<p><strong> <font color="#0099ff">Window size value</font>: 64 or 0000 0000 0100 0000 (16 bits) </strong><br><strong> <font color="#0099ff">Window size scaling factor</font>: 256 or 2 ^ 8 (as advertised by the 1st packet) </strong></p>
+<blockquote>
+<p>The actual window size is 16,384 (64 window size value * 256 window size scaling factor)</p>
+</blockquote>
+<p>这里的窗口大小就意味着，直到发送16384个字节，才会停止等待对方的ACK.随着双方回话继续，窗口的大小可以修改<code>window size value</code> 参数完成变窄或变宽，但是注意：<strong>Window size scaling factor 乘积因子</strong>必须保持不变。在RFC1323中规定的偏移（<code>shift count</code>）是14，也就是说最大的窗口可以达到<strong>Gbit</strong>,很大。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/wireshark%E6%8A%93%E5%8C%85%E5%AE%9E%E4%BE%8B.jpeg" alt> Wireshark抓包实例</p>
+<p>这一机制并不总是默认开启的和系统有关，貌似Linux默认开启，Windows默认关闭。</p>
+<h1 id="​TCP窗口参数设置"><a href="#​TCP窗口参数设置" class="headerlink" title="​TCP窗口参数设置"></a>​TCP窗口参数设置</h1><p>TCP窗口起着控制流量的作用，实际使用时这是一个双端协调的过程，还涉及到TCP的<code>慢启动</code>​（<code>Rapid Increase/Multiplicative Decrease</code>），拥塞避免，拥塞窗口和拥塞控制。可以记住，<strong>发送速率是由<code>min(拥塞窗口，接收窗口)</code></strong>，接收窗口在下文有讲。</p>
+<h2 id="TCP接收窗口「rwnd」优化设置​"><a href="#TCP接收窗口「rwnd」优化设置​" class="headerlink" title="TCP接收窗口「rwnd」优化设置​"></a>TCP接收窗口「rwnd」优化设置​</h2><h3 id="TCP接收窗口「rwnd」设置方法"><a href="#TCP接收窗口「rwnd」设置方法" class="headerlink" title="TCP接收窗口「rwnd」设置方法"></a>TCP接收窗口「rwnd」设置方法</h3><ol>
+<li><p>一个简单的原则是2倍的<code>BDP</code>.这里的<code>BDP</code>的意思是<strong>bandwidth-delay<br>product</strong>，也就是带宽和时延的乘积，带宽对于网络取最差连接的带宽。</p>
+<blockquote>
+<p>buffer size = 2 * bandwidth * delay​</p>
+</blockquote>
+</li>
+<li><p>还有一种简单的方式，使用ping来计算网络的环回时延（RTT），然后表达为：</p>
+<blockquote>
+<p>buffer size = bandwidth * RTT​</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="接收窗口「rwnd」计算方法中为什么是2倍？"><a href="#接收窗口「rwnd」计算方法中为什么是2倍？" class="headerlink" title="接收窗口「rwnd」计算方法中为什么是2倍？"></a>接收窗口「rwnd」计算方法中为什么是2倍？</h4><p>因为可以这么想，如果滑动窗口是 <code>bandwidth * delay</code>，当发送一次数据最后一个字节刚到时，对端要回ACK才能继续发送，就需要等待一次单向时延的时间，所以当是2倍时，刚好就能在等ACK的时间继续发送数据，等收到ACK时数据刚好发送完成，这样就提高了效率。</p>
+<p>举个例子</p>
+<blockquote>
+<p>带宽是<code>20Mbps</code>,通过<code>ping</code>我们计算<em>单向时延</em>(RTT)是<code>20ms</code>;<br>可以计算：<strong>20000000bps * 8 * 0.02 = 52,428bytes​</strong><br>因此我们最优窗口用 <strong>104,856bytes = 2 x 52,428</strong><br>所以说当发送者发送 <strong>104,856 bytes</strong> 数据后才需要等待一个ACK响应，当发送了一半的时候，对端已经收到并且返回ACK（理想情况），等到ACK回来，又把剩下的一半发送出去了，所以发送端就无需等待ACK返回。</p>
+</blockquote>
+<p>发现了么？这里的窗口已经明显大于<code>64KB</code>了，所以机制改善了，上一级。</p>
+<h2 id="TCP窗口流量控制​"><a href="#TCP窗口流量控制​" class="headerlink" title="TCP窗口流量控制​"></a>TCP窗口流量控制​</h2><p>​现在我们看看到底如何控制流量。TCP在传输数据时和 <code>windows size</code> 关系密切，本身窗口用来控制流量，在传输数据时，发送方数据超过接收方就会丢包，流量控制，流量控制要求数据传输双方在每次交互时声明各自的接收窗口<strong>「rwnd」</strong>大小，用来表示自己最大能保存多少数据，这主要是针对接收方而言的，通俗点儿说就是让发送方知道接收方能吃几碗饭，如果窗口衰减到零，也就是发送方不能再发了，那么就说明吃饱了，必须消化消化，如果硬撑胀漏了，那就是丢包了。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%B5%81%E9%87%8F%E6%8E%A7%E5%88%B6.jpeg" alt> 流量控制</p>
+<h3 id="慢启动-（-拥塞窗口「cwnd」）"><a href="#慢启动-（-拥塞窗口「cwnd」）" class="headerlink" title="慢启动 （ 拥塞窗口「cwnd」）"></a>慢启动 （ 拥塞窗口「cwnd」）</h3><p>虽然流量控制可以避免发送方过载接收方，但是却无法避免过载网络，这是因为接收窗口<strong>「rwnd」</strong>只反映了服务器个体的情况，却无法反映网络整体的情况。</p>
+<p>为了避免网络过载，慢启动引入了拥塞窗口<strong>「cwnd」</strong>的概念，用来表示发送方在得到接收方确认前，最大允许传输的未经确认的数据。<strong>「cwnd」</strong>同<strong>「rwnd」</strong>相比不同的是：它只是发送方的一个内部参数，无需通知给接收方，其初始值往往比较小，然后随着数据包被接收方确认，窗口成倍扩大，有点类似于拳击比赛，开始时不了解敌情，往往是次拳试探，慢慢心里有底了，开始逐渐加大重拳进攻的力度。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%8B%A5%E5%A1%9E%E7%AA%97%E5%8F%A3%E6%89%A9%E5%A4%A7.jpeg" alt> 拥塞窗口扩大</p>
+<p>在慢启动的过程中，随着<strong>「cwnd」</strong>的增加，可能会出现网络过载，其外在表现就是丢包，一旦出现此类问题，<strong>「cwnd」</strong>的大小会迅速衰减，以便网络能够缓过来。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E6%8B%A5%E5%A1%9E%E7%AA%97%E5%8F%A3%E4%B8%8E%E4%B8%A2%E5%8C%85.jpeg" alt> 拥塞窗口与丢包</p>
+<p>说明： </p>
+<blockquote>
+<p>网络中实际传输的未经确认的数据大小取决于 <code>min (「rwnd」和「cwnd」)</code></p>
+</blockquote>
+<h3 id="拥塞避免​-（-慢启动阈值「ssthresh」）"><a href="#拥塞避免​-（-慢启动阈值「ssthresh」）" class="headerlink" title="拥塞避免​ （ 慢启动阈值「ssthresh」）"></a>拥塞避免​ （ 慢启动阈值「ssthresh」）</h3><p>从慢启动的介绍中，我们能看到，发送方通过对<strong>「cwnd」</strong>大小的控制，能够避免网络过载，在此过程中，丢包与其说是一个网络问题，倒不如说是一种反馈机制，通过它我们可以感知到发生了网络拥塞，进而调整数据传输策略；<br>实际上，这里还有一个<code>慢启动阈值</code> <strong>「ssthresh」</strong>的概念，</p>
+<ul>
+<li><strong>「cwnd」</strong> &lt; <strong>「ssthresh」</strong>，那么表示在慢启动阶段；</li>
+<li><strong>「cwnd」</strong> &gt; <strong>「ssthresh」</strong>，那么表示在拥塞避免阶段，此时<strong>「cwnd」</strong>不再像慢启动阶段那样呈<em>指数级增长</em>，而是趋向于<em>线性增长</em>，以期避免网络拥塞，此阶段有多种算法实现，通常保持缺省即可，这里就不一一说明了。</li>
+</ul>
+<h3 id="如何调整-接收窗口「rwnd」"><a href="#如何调整-接收窗口「rwnd」" class="headerlink" title="如何调整 - 接收窗口「rwnd」"></a>如何调整 - 接收窗口「rwnd」</h3><p>很多时候TCP的传输速率异常偏低，很有可能是接收窗口<strong>「rwnd」</strong>过小导致，尤其对于时延较大的网络，实际上接收窗口<strong>「rwnd」</strong>的合理值取决于<code>BDP</code>的大小，也就是带宽和延迟的乘积。假设带宽是 <code>100Mbps</code>，延迟是 <code>100ms</code>，那么计算过程如下：</p>
+<blockquote>
+<p>BDP = 100Mbps <em> 100ms = (100 / 8) </em> (100 / 1000) = 1.25MB​</p>
+</blockquote>
+<p>​此问题下如果想最大限度提升吞度量，接收窗口<strong>「rwnd」</strong>的大小不应小于 1.25MB。</p>
+<h3 id="如何调整-拥塞窗口「cwnd」"><a href="#如何调整-拥塞窗口「cwnd」" class="headerlink" title="如何调整 - 拥塞窗口「cwnd」"></a>如何调整 - 拥塞窗口「cwnd」</h3><p>一般来说<strong>「cwnd」</strong>的初始值取决于MSS的大小，计算方法如下：</p>
+<blockquote>
+<p>min(4 <em> MSS, max(2 </em> MSS, 4380))</p>
+</blockquote>
+<p>以太网标准的MSS大小通常是1460，所以<strong>「cwnd」</strong>的初始值是<code>3MSS</code>。当我们浏览视频或者下载软件的时候，<strong>「cwnd」</strong>初始值的影响并不明显，这是因为传输的数据量比较大，时间比较长，相比之下，即便慢启动阶段<strong>「cwnd」</strong>初始值比较小，也会在相对很短的时间内加速到满窗口，基本上可以忽略不计。下图使用IxChariot完成一次设置​</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/wiki/tcp-window-size/%E8%AE%BE%E7%BD%AEcwnd.jpeg" alt> 设置cwnd</p>
+<p>不过当我们浏览网页的时候，情况就不一样了，这是因为传输的数据量比较小，时间比较短，相比之下，如果慢启动阶段<strong>「cwnd」</strong>初始值比较小，那么很可能还没来得及加速到满窗口，通讯就结束了。这就好比博尔特参加百米比赛，如果起跑慢的话，即便他的加速很快，也可能拿不到好成绩，因为还没等他完全跑起来，终点线已经到了</p>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/tcp/" rel="tag"># tcp</a>
+          
+            <a href="/tags/tcp窗口/" rel="tag"># tcp窗口</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/02/HTTP-2/" rel="next" title="HTTP/2 的那些事儿">
+                <i class="fa fa-chevron-left"></i> HTTP/2 的那些事儿
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/04/narration-of-tcp/" rel="prev" title="TCP 那些事儿">
+                TCP 那些事儿 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#摘要"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#​TCP窗口目的"><span class="nav-number">2.</span> <span class="nav-text">​TCP窗口目的</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP窗口机制-接收窗口「rwnd」"><span class="nav-number">2.1.</span> <span class="nav-text">TCP窗口机制 - 接收窗口「rwnd」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP接收窗口「rwnd」大小"><span class="nav-number">2.2.</span> <span class="nav-text">TCP接收窗口「rwnd」大小</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#​TCP窗口参数设置"><span class="nav-number">3.</span> <span class="nav-text">​TCP窗口参数设置</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP接收窗口「rwnd」优化设置​"><span class="nav-number">3.1.</span> <span class="nav-text">TCP接收窗口「rwnd」优化设置​</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP接收窗口「rwnd」设置方法"><span class="nav-number">3.1.1.</span> <span class="nav-text">TCP接收窗口「rwnd」设置方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#接收窗口「rwnd」计算方法中为什么是2倍？"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">接收窗口「rwnd」计算方法中为什么是2倍？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP窗口流量控制​"><span class="nav-number">3.2.</span> <span class="nav-text">TCP窗口流量控制​</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#慢启动-（-拥塞窗口「cwnd」）"><span class="nav-number">3.2.1.</span> <span class="nav-text">慢启动 （ 拥塞窗口「cwnd」）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#拥塞避免​-（-慢启动阈值「ssthresh」）"><span class="nav-number">3.2.2.</span> <span class="nav-text">拥塞避免​ （ 慢启动阈值「ssthresh」）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何调整-接收窗口「rwnd」"><span class="nav-number">3.2.3.</span> <span class="nav-text">如何调整 - 接收窗口「rwnd」</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何调整-拥塞窗口「cwnd」"><span class="nav-number">3.2.4.</span> <span class="nav-text">如何调整 - 拥塞窗口「cwnd」</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

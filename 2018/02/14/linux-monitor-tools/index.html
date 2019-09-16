@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="性能监控性能分析过程中一切都要可视化，从而了解应用内部及应用所在的环境发生了什么； http://java.net (已关闭，参见oracle) linux 监控工具uptime [root@centos7_template ~]# uptime10:31:42 up 4 days, 1:01, 1 user,load average: 0.02, 0.02, 0.05  1234567810:3">
+<meta name="keywords" content="jvm,linux">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux，Java 监控工具">
+<meta property="og:url" content="http://wiki.anocelot.cn/2018/02/14/linux-monitor-tools/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="性能监控性能分析过程中一切都要可视化，从而了解应用内部及应用所在的环境发生了什么； http://java.net (已关闭，参见oracle) linux 监控工具uptime [root@centos7_template ~]# uptime10:31:42 up 4 days, 1:01, 1 user,load average: 0.02, 0.02, 0.05  1234567810:3">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174140233-1402600015.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174143827-887028040.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174145405-624701483.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901171921858-708989302.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174146640-951850615.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174148468-33690562.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174149874-878717667.png">
+<meta property="og:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901171922874-980374978.png">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux，Java 监控工具">
+<meta name="twitter:description" content="性能监控性能分析过程中一切都要可视化，从而了解应用内部及应用所在的环境发生了什么； http://java.net (已关闭，参见oracle) linux 监控工具uptime [root@centos7_template ~]# uptime10:31:42 up 4 days, 1:01, 1 user,load average: 0.02, 0.02, 0.05  1234567810:3">
+<meta name="twitter:image" content="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174140233-1402600015.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2018/02/14/linux-monitor-tools/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>linux，Java 监控工具 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2018/02/14/linux-monitor-tools/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">linux，Java 监控工具
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-02-14 21:03:16" itemprop="dateCreated datePublished" datetime="2018-02-14T21:03:16+08:00">2018-02-14</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="性能监控"><a href="#性能监控" class="headerlink" title="性能监控"></a>性能监控</h1><p>性能分析过程中一切都要可视化，从而了解应用内部及应用所在的环境发生了什么；</p>
+<p><span class="exturl" data-url="aHR0cDovL2phdmEubmV0" title="http://java.net">http://java.net<i class="fa fa-external-link"></i></span> (已关闭，参见oracle)</p>
+<h1 id="linux-监控工具"><a href="#linux-监控工具" class="headerlink" title="linux 监控工具"></a>linux 监控工具</h1><h2 id="uptime"><a href="#uptime" class="headerlink" title="uptime"></a>uptime</h2><blockquote>
+<p>[root@centos7_template ~]# uptime<br>10:31:42 up 4 days, 1:01, 1 user,load average: 0.02, 0.02, 0.05</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">10:31:42    	</span><br><span class="line">// 当前系统时间</span><br><span class="line">up 4 days, 1:01 </span><br><span class="line">// 持续运行时间,时间越大，说明你的机器越稳定。 </span><br><span class="line">1 user  		</span><br><span class="line">// 用户连接数，是总连接数而不是用户数 </span><br><span class="line">load average: 0.02, 0.02, 0.05  </span><br><span class="line">// 统平均负载，统计最近1，5，15分钟的系统平均负载该命令将显示目前服务器持续运行的时间，以及负载情况。</span><br></pre></td></tr></table></figure>
+<p>通过这个命令，可以最简便的看出系统当前基本状态信息，这里面最有用是负载指标，如果你还想查看当前系统的CPU/内存以及相关的进程状态，可以使用TOP命令。</p>
+<h2 id="top"><a href="#top" class="headerlink" title="top"></a>top</h2><p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174140233-1402600015.png" alt></p>
+<p>通过TOP命令可以详细看出当前系统的CPU、内存、负载以及各进程状态（PID、进程占用CPU、内存、用户）等。从上面的结果看出该系统上安装了MySQL、java，可以看到他们各自的进程ID，假如这时Java进程占用较高的CPU和内存，那么你就要留心了，如果程序中没有计算量特别大、占用内存特别多的代码，可能你的java程序出现了未知的问题，可以根据进程ID做进一步的跟踪。除了通过TOP命令找到进程信息以外，还可以通过jdk自带的工具JPS直接找到java程序的进程号。</p>
+<h2 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h2><p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174143827-887028040.png" alt></p>
+<p>可以看到jps命令直接罗列出了当前系统中存在的java进程，这里第一个是jps命令自己的java进程，而另外一个是我启动的nosql监控工具进程。通过这种方法查询到java程序的进程ID后，可以进一步通过：</p>
+<h3 id="top-1"><a href="#top-1" class="headerlink" title="top"></a>top</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">top -p 3618 </span><br><span class="line">// 这里的3618就是上面查询到的java程序的进程ID</span><br></pre></td></tr></table></figure>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174145405-624701483.png" alt></p>
+<p>通过此方法可以准确的查看指定java进程的CPU/内存使用情况。</p>
+<h3 id="vmstat"><a href="#vmstat" class="headerlink" title="vmstat"></a>vmstat</h3><p>除此之外，vmstat命令也可以查看系统CPU/内存、swap、io等情况：</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901171921858-708989302.png" alt></p>
+<p>上面的命令每隔1秒采样一次，一共采样四次。CPU占用率很高，上下文切换频繁，说明系统有线程正在频繁切换，这可能是你的程序开启了大量的线程存在资源竞争的情况。另外swap也是值得关注的指标，如果swpd过高则可能系统能使用的物理内存不足，不得不使用交换区内存，还有一个例外就是某些程序优先使用swap，导致swap飙升，而物理内存还有很多空余，这些情况是需要注意的。</p>
+<h3 id="vmstat-vs-top"><a href="#vmstat-vs-top" class="headerlink" title="vmstat vs top"></a>vmstat vs top</h3><p>相比top，可以看到整个机器的CPU,内存,IO的使用情况，而不是单单看到各个进程的CPU使用率和内存使用率(使用场景不一样)。</p>
+<h3 id="pidstat"><a href="#pidstat" class="headerlink" title="pidstat"></a>pidstat</h3><p>查看系统指标，还有一个第三方工具：pidstat，这个工具还是很好用的，需要先安装：</p>
+<blockquote>
+<p>yum install sysstat</p>
+</blockquote>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174146640-951850615.png" alt></p>
+<p>该命令监控进程id为3618的CPU状态，每隔1秒采样一次，一共采样四次。“%CPU”表示CPU使用情况，“CPU”则表示正在使用哪个核的CPU，这里为0表示正在使用第一个核。如果还要显示线程ID，则可以使用：</p>
+<blockquote>
+<p>pidstat -p 3618 -u -t 1 4</p>
+</blockquote>
+<p>如果要监控磁盘读写情况，这可以使用：</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174148468-33690562.png" alt></p>
+<p>pidstat还有其他的参数，可以通过pidstat –help获取，再次不再赘述。</p>
+<h1 id="jdk-常用工具汇总"><a href="#jdk-常用工具汇总" class="headerlink" title="jdk 常用工具汇总"></a>jdk 常用工具汇总</h1><p>下面再介绍几个JDK自带有用的工具：<strong>jps、jstat、jmap、jstack</strong></p>
+<h2 id="JDK常用内置工具"><a href="#JDK常用内置工具" class="headerlink" title="JDK常用内置工具"></a>JDK常用内置工具</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途         </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qcHMuaHRtbA==" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jps.html">jps<i class="fa fa-external-link"></i></span></td>
+<td>列出已装载的JVM  </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qc3RhY2suaHRtbCNCQUJHSkRJRg==" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstack.html#BABGJDIF">jstack<i class="fa fa-external-link"></i></span></td>
+<td>打印线程堆栈信息   </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qc3RhdC5odG1sI0JFSEhHRkFF" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstat.html#BEHHGFAE">jstat<i class="fa fa-external-link"></i></span></td>
+<td>JVM监控统计信息  </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qbWFwLmh0bWwjQ0VHQ0VDSkI=" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jmap.html#CEGCECJB">jmap<i class="fa fa-external-link"></i></span></td>
+<td>打印JVM堆内对象情况</td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qaW5mby5odG1sI0JDR0VCRkRE" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jinfo.html#BCGEBFDD">jinfo<i class="fa fa-external-link"></i></span></td>
+<td>输出JVM配置信息  </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qY29uc29sZS5odG1sI0NBQ0NBQkVI" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jconsole.html#CACCABEH">jconsole<i class="fa fa-external-link"></i></span></td>
+<td>GUI监控工具    </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qdmlzdWFsdm0uaHRtbCNDQkJFR0RFSg==" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jvisualvm.html#CBBEGDEJ">jvisualvm<i class="fa fa-external-link"></i></span></td>
+<td>GUI监控工具    </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qaGF0Lmh0bWwjQ0lISEpBR0U=" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jhat.html#CIHHJAGE">jhat<i class="fa fa-external-link"></i></span></td>
+<td>堆离线分析工具    </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qZGIuaHRtbCNDSERHSkNJRQ==" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jdb.html#CHDGJCIE">jdb<i class="fa fa-external-link"></i></span></td>
+<td>java进程调试工具 </td>
+</tr>
+<tr>
+<td><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qc3RhdGQuaHRtbCNCQUJFSEZIRg==" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstatd.html#BABEHFHF">jstatd<i class="fa fa-external-link"></i></span></td>
+<td>远程JVM监控统计信息</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jps-1"><a href="#jps-1" class="headerlink" title="jps"></a>jps</h2><p>上面我们已经使用过了，他可以罗列出目前再服务器上运行的java程序及进程ID；</p>
+<h2 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h2><p>用于输出java程序内存使用情况，包括新生代、老年代、元数据区容量、垃圾回收情况。</p>
+<ul>
+<li>-class</li>
+<li>-compiler</li>
+<li>-gc</li>
+<li>-gccapacity</li>
+<li>-gccause</li>
+<li>-gcnew</li>
+<li>-gcnewcapacity</li>
+<li>-gcold</li>
+<li>-gcoldcapacity</li>
+<li>-gcpermcapacity</li>
+<li>-gcutil</li>
+<li>-printcompilation</li>
+</ul>
+<p>具体日志输出含义，看<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qc3RhdC5odG1sI0JFSEhHRkFF" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstat.html#BEHHGFAE">手册<i class="fa fa-external-link"></i></span>。</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901174149874-878717667.png" alt></p>
+<p>上述命令输出进程ID为3618的内存使用情况（每2000毫秒输出一次，一共输出20次）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">S0：幸存1区当前使用比例</span><br><span class="line">S1：幸存2区当前使用比例</span><br><span class="line">E：伊甸园区使用比例</span><br><span class="line">O：老年代使用比例</span><br><span class="line">M：元数据区使用比例</span><br><span class="line">CCS：压缩使用比例</span><br><span class="line">YGC：年轻代垃圾回收次数</span><br><span class="line">FGC：老年代垃圾回收次数</span><br><span class="line">FGCT：老年代垃圾回收消耗时间</span><br><span class="line">GCT：垃圾回收消耗总时间</span><br></pre></td></tr></table></figure>
+<h2 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h2><p>用于输出java程序中内存对象的情况，包括有哪些对象，对象的数量。</p>
+<p>打印JVM堆内对象情况，常用参数有：（具体描述见<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qbWFwLmh0bWwjQ0VHQ0VDSkI=" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jmap.html#CEGCECJB">手册<i class="fa fa-external-link"></i></span>）</p>
+<ul>
+<li><p>-dump:[live,]format=b,file=&lt; filename&gt; </p>
+<p>  使用hprof二进制形式,输出jvm的heap内容到文件=. live子选项是可选的，假如指定live选项,那么只输出活的对象到文件。</p>
+</li>
+<li><p>-finalizerinfo</p>
+<p>  打印正等候回收的对象的信息。</p>
+</li>
+<li><p>-heap</p>
+<p>  打印heap的概要信息，GC使用的算法，heap的配置及wise heap的使用情况。</p>
+</li>
+<li><p>-histo[:live]</p>
+<p>  打印每个class的实例数目、内存占用、类全名信息。VM的内部类名字开头会加上前缀“*”。如果live子参数加上后,只统计活的对象数量。</p>
+</li>
+<li><p>-clstats</p>
+<p>  打印classload的信息。包含每个classloader的名字、活泼性、地址、父classloader和加载的class数量。 </p>
+</li>
+<li><p>-F</p>
+<p>  在pid没有响应的时候强制使用-dump或者-histo参数。在这个模式下，live子参数无效。</p>
+</li>
+</ul>
+<blockquote>
+<p>jmap -histo 3618</p>
+</blockquote>
+<p>上述命令打印出进程ID为3618的内存情况。但我们常用的方式是将指定进程的内存heap输出到外部文件，再由专门的heap分析工具进行分析,例如mat（Memory Analysis Tool），所以我们常用的命令是：</p>
+<blockquote>
+<p>jmap -dump:live,format=b,file=heap.hprof 3618</p>
+</blockquote>
+<p>将heap.hprof传输出来到window电脑上使用mat工具分析：</p>
+<p><img src="http://anocelot-wiki.oss-cn-hangzhou.aliyuncs.com/java/linux_monitor/352511-20170901171922874-980374978.png" alt></p>
+<h2 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h2><p>用户输出java程序线程栈的情况，常用于定位因为某些线程问题造成的故障或性能问题。</p>
+<blockquote>
+<p>jstack 3618 &gt; jstack.out</p>
+</blockquote>
+<h2 id="jhat"><a href="#jhat" class="headerlink" title="jhat"></a>jhat</h2><p>用于对JAVA heap进行离线分析的工具，可以对不同虚拟机中导出的heap信息文件进行分析。详细使用见<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC9qaGF0Lmh0bWwjQ0lISEpBR0U=" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jhat.html#CIHHJAGE">手册<i class="fa fa-external-link"></i></span>。</p>
+<h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><ol>
+<li><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm9yYWNsZS5jb20vamF2YXNlLzgvZG9jcy90ZWNobm90ZXMvdG9vbHMvdW5peC8=" title="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/">Java Platform, Standard Edition Tools Reference<i class="fa fa-external-link"></i></span></li>
+<li><span class="exturl" data-url="aHR0cDovL2Jsb2cuY3Nkbi5uZXQvZmVuZ2xpYmluZy9hcnRpY2xlL2RldGFpbHMvNjQxMTkyNA==" title="http://blog.csdn.net/fenglibing/article/details/6411924">JDK内置工具使用<i class="fa fa-external-link"></i></span></li>
+</ol>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/jvm/" rel="tag"># jvm</a>
+          
+            <a href="/tags/linux/" rel="tag"># linux</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/06/jdk9-new-feature/" rel="next" title="jdk9-new-feature">
+                <i class="fa fa-chevron-left"></i> jdk9-new-feature
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/14/java-out-of-memory/" rel="prev" title="Java 内存溢出">
+                Java 内存溢出 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#性能监控"><span class="nav-number">1.</span> <span class="nav-text">性能监控</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#linux-监控工具"><span class="nav-number">2.</span> <span class="nav-text">linux 监控工具</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#uptime"><span class="nav-number">2.1.</span> <span class="nav-text">uptime</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#top"><span class="nav-number">2.2.</span> <span class="nav-text">top</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jps"><span class="nav-number">2.3.</span> <span class="nav-text">jps</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#top-1"><span class="nav-number">2.3.1.</span> <span class="nav-text">top</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vmstat"><span class="nav-number">2.3.2.</span> <span class="nav-text">vmstat</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vmstat-vs-top"><span class="nav-number">2.3.3.</span> <span class="nav-text">vmstat vs top</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pidstat"><span class="nav-number">2.3.4.</span> <span class="nav-text">pidstat</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#jdk-常用工具汇总"><span class="nav-number">3.</span> <span class="nav-text">jdk 常用工具汇总</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#JDK常用内置工具"><span class="nav-number">3.1.</span> <span class="nav-text">JDK常用内置工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jps-1"><span class="nav-number">3.2.</span> <span class="nav-text">jps</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jstat"><span class="nav-number">3.3.</span> <span class="nav-text">jstat</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jmap"><span class="nav-number">3.4.</span> <span class="nav-text">jmap</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jstack"><span class="nav-number">3.5.</span> <span class="nav-text">jstack</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jhat"><span class="nav-number">3.6.</span> <span class="nav-text">jhat</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考文献"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>

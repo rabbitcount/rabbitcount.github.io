@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=6.7.0">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=6.7.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=6.7.0">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=6.7.0" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '6.7.0',
+    sidebar: {"position":"right","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="git 命令">
+<meta name="keywords" content="git">
+<meta property="og:type" content="article">
+<meta property="og:title" content="git 常见用法">
+<meta property="og:url" content="http://wiki.anocelot.cn/2019/01/14/git-base/index.html">
+<meta property="og:site_name" content="盗梦 de 虎猫">
+<meta property="og:description" content="git 命令">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-noun.png">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-submodule-png.png">
+<meta property="og:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-stash-list.png">
+<meta property="og:updated_time" content="2019-07-18T08:17:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="git 常见用法">
+<meta name="twitter:description" content="git 命令">
+<meta name="twitter:image" content="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-noun.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://wiki.anocelot.cn/2019/01/14/git-base/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>git 常见用法 | 盗梦 de 虎猫</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-right page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">盗梦 de 虎猫</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-主页">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>主页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-分类">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-sitemap"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-标签">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-tag"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-归档">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/01/14/git-base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">git 常见用法
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-01-14 12:11:12" itemprop="dateCreated datePublished" datetime="2019-01-14T12:11:12+08:00">2019-01-14</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>git 命令<br><a id="more"></a></p>
+<h1 id="图说git"><a href="#图说git" class="headerlink" title="图说git"></a>图说git</h1><p>工作区(working tree)，暂存区（index）和 branch（commit）<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-noun.png" alt></p>
+<h1 id="交互式暂存"><a href="#交互式暂存" class="headerlink" title="交互式暂存"></a>交互式暂存</h1><h2 id="使用交互模式的价值"><a href="#使用交互模式的价值" class="headerlink" title="使用交互模式的价值"></a>使用交互模式的价值</h2><p><code>git add</code> 的 <strong>INTERACTIVE MODE</strong>；包含 <code>status</code>、 <code>diff</code>、 <a href="#%E4%BA%A4%E4%BA%92%E5%BC%8F%E6%9A%82%E5%AD%98"><code>add --patch</code></a> 等功能，可以方便地构建只包含特定组合和部分文件的提交。在你修改了一大批文件然后决定将这些变更分布在几个各有侧重的提交而不是单个又大又乱的提交时，这些工具非常有用。<br>用这种方法，你可以确保你的提交在逻辑上划分为相应的变更集，以便于供和你一起工作的开发者审阅。</p>
+<h2 id="交互模式"><a href="#交互模式" class="headerlink" title="交互模式"></a>交互模式</h2><p>通过 <code>git add -i</code> 进入交互模式，交互样式如下<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">➜  interactive-folder git:(master) ✗ git add -i</span><br><span class="line">           staged     unstaged path</span><br><span class="line">  1:    unchanged        +1/-1 folder/number1</span><br><span class="line">  2:    unchanged        +2/-2 folder/number2</span><br><span class="line"></span><br><span class="line">*** Commands ***</span><br><span class="line">  1: status	  2: update	  3: revert	  4: add untracked</span><br><span class="line">  5: patch	  6: diff	  7: quit	  8: <span class="built_in">help</span></span><br></pre></td></tr></table></figure></p>
+<p>如需要将 <code>folder/number1</code> 文件加入到暂存区中，可以执行以下操作：<code>2 -&gt; &#39;enter&#39; -&gt; 1 -&gt; &#39;enter&#39;</code>；其中第一个2表示选择update功能，1表示选择第一个文件；<br>选择 Update 并选择 <code>folder/number1</code> 后，number1文件左侧出现一个 <code>*</code> 号标记，表示文件已经执行对应操作；<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">➜  interactive-folder git:(master) ✗ git add -i</span><br><span class="line">           staged     unstaged path</span><br><span class="line">  1:    unchanged        +1/-1 folder/number1</span><br><span class="line">  2:    unchanged        +2/-2 folder/number2</span><br><span class="line"></span><br><span class="line">*** Commands ***</span><br><span class="line">  1: status	  2: update	  3: revert	  4: add untracked</span><br><span class="line">  5: patch	  6: diff	  7: quit	  8: help</span><br><span class="line">What now&gt; 2</span><br><span class="line">           staged     unstaged path</span><br><span class="line">  1:    unchanged        +1/-1 folder/number1</span><br><span class="line">  2:    unchanged        +2/-2 folder/number2</span><br><span class="line">Update&gt;&gt; 1</span><br><span class="line">           staged     unstaged path</span><br><span class="line">* 1:    unchanged        +1/-1 folder/number1</span><br><span class="line">  2:    unchanged        +2/-2 folder/number2</span><br><span class="line">Update&gt;&gt;</span><br><span class="line">updated 1 path</span><br><span class="line"></span><br><span class="line">*** Commands ***</span><br><span class="line">  1: status	  2: update	  3: revert	  4: add untracked</span><br><span class="line">  5: patch	  6: diff	  7: quit	  8: help</span><br><span class="line">What now&gt;</span><br></pre></td></tr></table></figure></p>
+<h1 id="Git-Command"><a href="#Git-Command" class="headerlink" title="Git Command"></a>Git Command</h1><h2 id="add"><a href="#add" class="headerlink" title="add"></a>add</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">git add [--verbose | -v] [--dry-run | -n] [--force | -f] [--interactive | -i] [--patch | -p]</span><br><span class="line">      [--edit | -e] [--[no-]all | --[no-]ignore-removal | [--update | -u]]</span><br><span class="line">      [--intent-to-add | -N] [--refresh] [--ignore-errors] [--ignore-missing]</span><br><span class="line">      [--chmod=(+|-)x] [--] [&lt;pathspec&gt;…]</span><br></pre></td></tr></table></figure>
+<h3 id="add-patch"><a href="#add-patch" class="headerlink" title="add --patch"></a><code>add --patch</code></h3><blockquote>
+<p>When you pass this option to add, instead of immediately adding all the changes in the file to the index, it goes through each change and asks you what you want to do</p>
+</blockquote>
+<p>我们通常使用 <code>git add &lt;file&gt;</code> 将文件中的所有修改都添加到 暂存区(index) 中；初次之外，我们可以通过 <code>git add --patch</code> 或 <code>git add -p</code>，让我们可以将同一个文件中的修改进行筛选，并最终放到不同的commit中；<br>通过使用<code>--patch</code> 或简写的 <code>-p</code> 参数，我们可以逐个review文件夹中的文件，并决定每个文件中的每一处修改应如何处置（添加、拒绝或留待处理等）；<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]? ?</span><br><span class="line">y - stage this hunk</span><br><span class="line">n - do not stage this hunk</span><br><span class="line">q - quit; do not stage this hunk or any of the remaining ones</span><br><span class="line">a - stage this hunk and all later hunks in the file</span><br><span class="line">d - do not stage this hunk or any of the later hunks in the file</span><br><span class="line">g - select a hunk to go to</span><br><span class="line">/ - search for a hunk matching the given regex</span><br><span class="line">j - leave this hunk undecided, see next undecided hunk</span><br><span class="line">J - leave this hunk undecided, see next hunk</span><br><span class="line">e - manually edit the current hunk</span><br><span class="line">? - print help</span><br></pre></td></tr></table></figure></p>
+<h4 id="一个小栗子"><a href="#一个小栗子" class="headerlink" title="一个小栗子"></a>一个小栗子</h4><p>folder 文件夹下，原有number1和number2两个文件，我们number2文件，第一行由 pre 修改为 post，最后一行由 last 修改为 editLast；<br>在使用 <code>add --patch</code> 操作到 number2 文件时，修改内容被修改为两个 hunk，我们可以针对不同的 hunk进行处理，如此处我们针对第一个hunk执行 y（stage this hunk），第二个hunk执行 n（do not stage this hunk）操作；这样最终只有第一个 <code>pre -&gt; post</code> 的修改会被加入到暂存区（index）中；<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line">➜  patch-folder git:(master) ✗ gst</span><br><span class="line">On branch master</span><br><span class="line">Changes not staged for commit:</span><br><span class="line">  (use &quot;git add &lt;file&gt;...&quot; to update what will be committed)</span><br><span class="line">  (use &quot;git checkout -- &lt;file&gt;...&quot; to discard changes in working directory)</span><br><span class="line"></span><br><span class="line">	modified:   folder/number1</span><br><span class="line">	modified:   folder/number2</span><br><span class="line"></span><br><span class="line">no changes added to commit (use &quot;git add&quot; and/or &quot;git commit -a&quot;)</span><br><span class="line">➜  patch-folder git:(master) ✗ tree</span><br><span class="line">.</span><br><span class="line">├── folder</span><br><span class="line">│   ├── number1</span><br><span class="line">│   └── number2</span><br><span class="line">└── readme.md</span><br><span class="line"></span><br><span class="line">1 directory, 3 files</span><br><span class="line">➜  patch-folder git:(master) ✗ git add --patch folder</span><br><span class="line">diff --git a/folder/number1 b/folder/number1</span><br><span class="line">index 34e9d85..a9a1b1f 100644</span><br><span class="line">--- a/folder/number1</span><br><span class="line">+++ b/folder/number1</span><br><span class="line">@@ -1 +1 @@</span><br><span class="line">-o1</span><br><span class="line">+po1</span><br><span class="line">Stage this hunk [y,n,q,a,d,e,?]? n</span><br><span class="line"></span><br><span class="line">diff --git a/folder/number2 b/folder/number2</span><br><span class="line">index 0dcbba8..1027bad 100644</span><br><span class="line">--- a/folder/number2</span><br><span class="line">+++ b/folder/number2</span><br><span class="line">@@ -1,4 +1,4 @@</span><br><span class="line">-pre</span><br><span class="line">+post</span><br><span class="line"> 1</span><br><span class="line"> 2</span><br><span class="line"> 3</span><br><span class="line">Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]? ?</span><br><span class="line">y - stage this hunk</span><br><span class="line">n - do not stage this hunk</span><br><span class="line">q - quit; do not stage this hunk or any of the remaining ones</span><br><span class="line">a - stage this hunk and all later hunks in the file</span><br><span class="line">d - do not stage this hunk or any of the later hunks in the file</span><br><span class="line">g - select a hunk to go to</span><br><span class="line">/ - search for a hunk matching the given regex</span><br><span class="line">j - leave this hunk undecided, see next undecided hunk</span><br><span class="line">J - leave this hunk undecided, see next hunk</span><br><span class="line">e - manually edit the current hunk</span><br><span class="line">? - print help</span><br><span class="line">@@ -1,4 +1,4 @@</span><br><span class="line">-pre</span><br><span class="line">+post</span><br><span class="line"> 1</span><br><span class="line"> 2</span><br><span class="line"> 3</span><br><span class="line">Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]? y</span><br><span class="line">@@ -7,4 +7,4 @@ po2</span><br><span class="line"> 6</span><br><span class="line"> 7</span><br><span class="line"> 8</span><br><span class="line">-last</span><br><span class="line">+editLast</span><br><span class="line">Stage this hunk [y,n,q,a,d,K,g,/,e,?]? n</span><br><span class="line"></span><br><span class="line">➜  patch-folder git:(master) ✗ gst</span><br><span class="line">On branch master</span><br><span class="line">Changes to be committed:</span><br><span class="line">  (use &quot;git reset HEAD &lt;file&gt;...&quot; to unstage)</span><br><span class="line"></span><br><span class="line">	modified:   folder/number2</span><br><span class="line"></span><br><span class="line">Changes not staged for commit:</span><br><span class="line">  (use &quot;git add &lt;file&gt;...&quot; to update what will be committed)</span><br><span class="line">  (use &quot;git checkout -- &lt;file&gt;...&quot; to discard changes in working directory)</span><br><span class="line"></span><br><span class="line">	modified:   folder/number1</span><br><span class="line">	modified:   folder/number2</span><br></pre></td></tr></table></figure></p>
+<h2 id="push"><a href="#push" class="headerlink" title="push"></a>push</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ git push &lt;远程主机名&gt; &lt;本地分支名&gt;:&lt;远程分支名&gt;</span><br><span class="line"></span><br><span class="line">$ git push [--all | --mirror | --tags] [--follow-tags] [--atomic] [-n | --dry-run] [--receive-pack=&lt;git-receive-pack&gt;]</span><br><span class="line">       [--repo=&lt;repository&gt;] [-f | --force] [-d | --delete] [--prune] [-v | --verbose]</span><br><span class="line">       [-u | --<span class="built_in">set</span>-upstream] [--push-option=&lt;string&gt;]</span><br><span class="line">       [--[no-]signed|--sign=(<span class="literal">true</span>|<span class="literal">false</span>|<span class="keyword">if</span>-asked)]</span><br><span class="line">       [--force-with-lease[=&lt;refname&gt;[:&lt;expect&gt;]]]</span><br><span class="line">       [--no-verify] [&lt;repository&gt; [&lt;refspec&gt;…]]</span><br></pre></td></tr></table></figure>
+<p>将本地的master分支推送到origin主机的master分支。如果master不存在，则会被新建。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git push origin master</span><br></pre></td></tr></table></figure></p>
+<h3 id="清空指定远端分支"><a href="#清空指定远端分支" class="headerlink" title="清空指定远端分支"></a>清空指定远端分支</h3><p>省略本地分支名，则表示删除指定的远程分支，因为这等同于推送一个空的本地分支到远程分支。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git push origin :master</span><br><span class="line"><span class="comment"># 等同于</span></span><br><span class="line">$ git push origin --delete master</span><br></pre></td></tr></table></figure></p>
+<h3 id="推送所有本地分支"><a href="#推送所有本地分支" class="headerlink" title="推送所有本地分支"></a>推送所有本地分支</h3><p>不管是否存在对应的远程分支，将本地的所有分支都推送到远程主机，这时需要使用–all选项。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git push --all origin</span><br></pre></td></tr></table></figure></p>
+<h3 id="强制推送"><a href="#强制推送" class="headerlink" title="强制推送"></a>强制推送</h3><p>如果远程主机的版本比本地版本更新，推送时Git会报错，要求先在本地做 <code>git pull</code> 合并差异，然后再推送到远程主机。这时，如果你一定要推送，可以使用 <code>--force</code> 选项。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git push --force origin</span><br></pre></td></tr></table></figure></p>
+<p>Shell上面命令使用 <code>-–force</code> 选项，结果导致在远程主机产生一个”非直进式”的合并(non-fast-forward merge)。除非你很确定要这样做，否则应该尽量避免使用 <code>–-force</code> 选项。</p>
+<h3 id="push-的-simple-和-matching-方式"><a href="#push-的-simple-和-matching-方式" class="headerlink" title="push 的 simple 和 matching 方式"></a>push 的 simple 和 matching 方式</h3><p><code>simple</code>：默认只推送当前分支<br><code>matching</code>：推送所有有对应的远程分支的本地分支<br>Git 2.0版本之前，默认采用matching方法，之后改为默认采用simple方式。如果要修改这个设置，可以采用<code>git config</code>命令。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git config --global push.default matching</span><br><span class="line"><span class="comment"># 或者</span></span><br><span class="line">$ git config --global push.default simple</span><br></pre></td></tr></table></figure></p>
+<h2 id="fork"><a href="#fork" class="headerlink" title="fork"></a>fork</h2><h3 id="保持与源项目的更新"><a href="#保持与源项目的更新" class="headerlink" title="保持与源项目的更新"></a>保持与源项目的更新</h3><p>首先保证本地仓库的upstream是源项目的URL，若没有则添加：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git remote add upstream &#123;URL&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="submodule"><a href="#submodule" class="headerlink" title="submodule"></a>submodule</h2><blockquote>
+<p>Git Submodule 允许一个git仓库，作为另一个git仓库的子目录，并且保持父项目和子项目相互独立。</p>
+</blockquote>
+<h3 id="添加子仓库"><a href="#添加子仓库" class="headerlink" title="添加子仓库"></a>添加子仓库</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> git submodule add &lt;仓库地址&gt; &lt;本地路径&gt;</span></span><br></pre></td></tr></table></figure>
+<h4 id="新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。"><a href="#新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。" class="headerlink" title="新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。"></a>新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> ssh://git@host:port/path/to/main-project.git</span><br></pre></td></tr></table></figure>
+<h4 id="进入父仓库，并添加子仓库"><a href="#进入父仓库，并添加子仓库" class="headerlink" title="进入父仓库，并添加子仓库"></a>进入父仓库，并添加子仓库</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git submodule add ssh://git@host:port/path/to/sub.git sub-project</span><br></pre></td></tr></table></figure>
+<h5 id="添加成功后，父仓库根目录会新增-gitmodule文件。"><a href="#添加成功后，父仓库根目录会新增-gitmodule文件。" class="headerlink" title="添加成功后，父仓库根目录会新增.gitmodule文件。"></a>添加成功后，父仓库根目录会新增.gitmodule文件。</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[submodule &quot;sub-project&quot;]</span><br><span class="line">    path = sub-project</span><br><span class="line">    url = ssh://git@host:port/path/to/sub.git</span><br></pre></td></tr></table></figure>
+<p>下图中 next文件夹是subModule，next中并不会才能出实际的文件，而是一个commitId<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-submodule-png.png" alt></p>
+<h3 id="检出包含subModule的项目"><a href="#检出包含subModule的项目" class="headerlink" title="检出包含subModule的项目"></a>检出包含subModule的项目</h3><p>克隆一个包含子仓库的仓库目录，并不会clone下子仓库的文件，只是会克隆下 <code>.gitmodule</code> 描述文件，需要进一步克隆子仓库文件。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">// 初始化本地配置文件</span><br><span class="line">$ git submodule init</span><br><span class="line"></span><br><span class="line">// 检出父仓库列出的commit</span><br><span class="line">$ git submodule update</span><br></pre></td></tr></table></figure></p>
+<p>或者使用组合指令。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git submodule update --init --recursive</span><br></pre></td></tr></table></figure></p>
+<p>此时子目录在一个未命名分支（如果原始提交不是master分支），或子仓库有改动并没有检测到。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git branch</span><br><span class="line">* (HEAD detached at 46a27af)</span><br><span class="line">  master</span><br></pre></td></tr></table></figure></p>
+<h3 id="删除子仓库"><a href="#删除子仓库" class="headerlink" title="删除子仓库"></a>删除子仓库</h3><ul>
+<li>删除.gitsubmodule里相关部分</li>
+<li>删除.git/config 文件里相关字段</li>
+<li>删除子仓库目录。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git rm --cached &lt;本地路径&gt;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="stash"><a href="#stash" class="headerlink" title="stash"></a>stash</h2><p>Use git stash when you want to record the current state of the working directory and the index, but want to go back to a clean working directory. The command saves your local modifications away and reverts the working directory to match the HEAD commit.</p>
+<p>The modifications stashed away by this command can be listed with <code>git stash list</code>, inspected with <code>git stash show</code>, and restored (potentially on top of a different commit) with <code>git stash apply</code>. Calling <code>git stash</code> without any arguments is equivalent to <code>git stash push</code>. A stash is by default listed as “WIP on branchname …”, but you can give a more descriptive message on the command line when you create one.</p>
+<p>The latest stash you created is stored in refs/stash; older stashes are found in the reflog of this reference and can be named using the usual reflog syntax (e.g. stash@{0} is the most recently created stash, stash@{1} is the one before it, stash@{2.hours.ago} is also possible). Stashes may also be referenced by specifying just the stash index (e.g. the integer n is equivalent to stash@{n}).</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">git stash list [&lt;options&gt;]</span><br><span class="line">git stash show [&lt;stash&gt;]</span><br><span class="line">git stash drop [-q|--quiet] [&lt;stash&gt;]</span><br><span class="line">git stash ( pop | apply ) [--index] [-q|--quiet] [&lt;stash&gt;]</span><br><span class="line">git stash branch &lt;branchname&gt; [&lt;stash&gt;]</span><br><span class="line">git stash [push [-p|--patch] [-k|--[no-]keep-index] [-q|--quiet]</span><br><span class="line">             [-u|--include-untracked] [-a|--all] [-m|--message &lt;message&gt;]</span><br><span class="line">             [--] [&lt;pathspec&gt;...]]</span><br><span class="line">git stash clear</span><br><span class="line">git stash create [&lt;message&gt;]</span><br><span class="line">git stash store [-m|--message &lt;message&gt;] [-q|--quiet] &lt;commit&gt;</span><br></pre></td></tr></table></figure>
+<h3 id="stash-常用指令"><a href="#stash-常用指令" class="headerlink" title="stash 常用指令"></a>stash 常用指令</h3><p><code>git stash list</code> 列出<br><code>git stash show</code> 查看<br><code>git stash apply stash@{2}</code> 恢复指定的stash<br><code>git stash</code> 相当于<code>git stash push</code><br><code>git stash push --keep-index</code></p>
+<blockquote>
+<p><code>--keep-index</code> 使用这个option时，会stash所有未被添加到index的文件，而不影响已经添加到add中的信息；具体可以参考<a href></a></p>
+</blockquote>
+<p>默认情况下，储藏列表为展示样式如下，但可以在命令行上给出更具描述性的消息。<br><img src="https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-01-14-git-base/git-base-stash-list.png" alt></p>
+<h3 id="stash-使用方式"><a href="#stash-使用方式" class="headerlink" title="stash 使用方式"></a>stash 使用方式</h3><h4 id="Pulling-into-a-dirty-tree"><a href="#Pulling-into-a-dirty-tree" class="headerlink" title="Pulling into a dirty tree"></a>Pulling into a dirty tree</h4><p>当你处于某种状态的时候，你会发现有一些上游的变化可能与正在做的事情有关。当您的本地更改不会与上游的更改冲突时，简单的<code>git pull</code> 将让您向前。但是，有些情况下，本地更改与上游更改相冲突，<code>git pull</code> 拒绝覆盖您的更改。 在这种情况下，您可以将更改隐藏起来，执行 <code>git pull</code> ，然后解压缩，如下所示：<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ git pull</span><br><span class="line"> ...</span><br><span class="line">file foobar not up to date, cannot merge.</span><br><span class="line">$ git stash</span><br><span class="line">$ git pull</span><br><span class="line">$ git stash pop</span><br></pre></td></tr></table></figure></p>
+<h4 id="工作流中断-Interrupted-workflow"><a href="#工作流中断-Interrupted-workflow" class="headerlink" title="工作流中断(Interrupted workflow)"></a>工作流中断(Interrupted workflow)</h4><p>需要暂停手中的修改，并在当前分支上，优先执行另一个事情；此时可以使用stash<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ... hack hack hack ...</span></span><br><span class="line">$ git stash</span><br><span class="line">$ edit emergency fix</span><br><span class="line">$ git commit -a -m <span class="string">"Emergency Fix"</span></span><br><span class="line">$ git stash pop</span><br><span class="line"><span class="comment"># ... continue hacking ...</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="从储藏中创建分支"><a href="#从储藏中创建分支" class="headerlink" title="从储藏中创建分支"></a>从储藏中创建分支</h4><p>如果储藏了一些工作，暂时不去理会，然后继续在你储藏工作的分支上工作，在重新应用工作时可能会碰到一些问题。如果尝试应用的变更是针对一个在那之后修改过的文件，会碰到一个归并冲突并且必须去化解它。如果你想用更方便的方法来重新检验储藏的变更，可以运行 git stash branch，这会创建一个新的分支，检出储藏工作时的所处的提交，重新应用你的工作，如果成功，将会丢弃储藏。<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">$ git stash branch testchanges</span><br><span class="line">Switched to a new branch <span class="string">"testchanges"</span></span><br><span class="line"><span class="comment"># On branch testchanges</span></span><br><span class="line"><span class="comment"># Changes to be committed:</span></span><br><span class="line"><span class="comment">#   (use "git reset HEAD &lt;file&gt;..." to unstage)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#      modified:   index.html</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Changes not staged for commit:</span></span><br><span class="line"><span class="comment">#   (use "git add &lt;file&gt;..." to update what will be committed)</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment">#      modified:   lib/simplegit.rb</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">Dropped refs/stash@&#123;0&#125; (f0dfc4d5dc332d1cee34a634182e168c4efc3359)</span><br></pre></td></tr></table></figure></p>
+<h4 id="Testing-partial-commits"><a href="#Testing-partial-commits" class="headerlink" title="Testing partial commits"></a>Testing partial commits</h4><p>当我们需要测试部分修改时，可以通过<code>add --patch</code>将部分修改先添加到index中，并使用 <code>stash push --keep-index</code>，将未添加的部分代码stash，用以验证当前的部分代码是否正确；<br><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ... hack hack hack ...</span></span><br><span class="line">$ git add --patch foo            <span class="comment"># add just first part to the index</span></span><br><span class="line">$ git stash push --keep-index    <span class="comment"># save all other changes to the stash</span></span><br><span class="line">$ edit/build/<span class="built_in">test</span> first part</span><br><span class="line">$ git commit -m <span class="string">'First part'</span>     <span class="comment"># commit fully tested change</span></span><br><span class="line">$ git stash pop                  <span class="comment"># prepare to work on all other changes</span></span><br><span class="line"><span class="comment"># ... repeat above five steps until one commit remains ...</span></span><br><span class="line">$ edit/build/<span class="built_in">test</span> remaining parts</span><br><span class="line">$ git commit foo -m <span class="string">'Remaining parts'</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="cherry-pick"><a href="#cherry-pick" class="headerlink" title="cherry-pick"></a>cherry-pick</h2><p>将另一个分支的若干个 commit(s)，合并到当前分支上；<br>注意：当执行完 cherry-pick 以后，将会 生成一个新的提交；这个新的提交的哈希值和原来的不同，但标识名 一样；(commit id会变)</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">git cherry-pick [--edit] [-n] [-m parent-number] [-s] [-x] [--ff]</span><br><span class="line">                         [-S[&lt;keyid&gt;]] &lt;commit&gt;...</span><br><span class="line">                         </span><br><span class="line">  -e, --edit</span><br><span class="line">      With this option, git cherry-pick will <span class="built_in">let</span> you edit the commit message prior to committing.</span><br></pre></td></tr></table></figure>
+<h3 id="cherry-pick-实战"><a href="#cherry-pick-实战" class="headerlink" title="cherry-pick 实战"></a>cherry-pick 实战</h3><ol>
+<li><p>如果在 <code>cherry-pick</code> 过程中，代码存在冲突，可能会出现类似的信息；</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[master bf9edd5] second</span><br><span class="line"> Date: Mon Jan 14 15:01:31 2019 +0800</span><br><span class="line"> 1 file changed, 1 insertion(+)</span><br><span class="line">error: could not apply 380b856... thrid</span><br><span class="line">hint: after resolving the conflicts, mark the corrected paths</span><br><span class="line">hint: with <span class="string">'git add &lt;paths&gt;'</span> or <span class="string">'git rm &lt;paths&gt;'</span></span><br><span class="line">hint: and commit the result with <span class="string">'git commit'</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>git status</code> 查看时，此时需要手工处理标记为 <code>both modified</code> 的文件；</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">On branch master</span><br><span class="line">You are currently cherry-picking commit 380b856.</span><br><span class="line">  (fix conflicts and run <span class="string">"git cherry-pick --continue"</span>)</span><br><span class="line">  (use <span class="string">"git cherry-pick --abort"</span> to cancel the cherry-pick operation)</span><br><span class="line"></span><br><span class="line">Unmerged paths:</span><br><span class="line">  (use <span class="string">"git add &lt;file&gt;..."</span> to mark resolution)</span><br><span class="line"></span><br><span class="line">	both modified:   readme.md</span><br><span class="line"></span><br><span class="line">no changes added to commit (use <span class="string">"git add"</span> and/or <span class="string">"git commit -a"</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>处理完冲突后，<code>git add</code>标记为 <code>both modified</code> 的文件，此时可以使用 <code>cherry-pick --continue</code> 或 <code>cherry-pick --abort</code> 继续或终止 <code>cherry-pick</code>；</p>
+</li>
+</ol>
+<h2 id="format-patch"><a href="#format-patch" class="headerlink" title="format-patch"></a>format-patch</h2><h3 id="什么是-patch"><a href="#什么是-patch" class="headerlink" title="什么是 patch"></a>什么是 patch</h3><p>如果一个软件有了新版本，我们可以完整地下载新版本的代码进行编译安装。然而，像Linux Kernel这样的大型项目，代码即使压缩，也超过70MB，每次全新下载是有相当大的代价的。然而，每次更新变动的代码可能不超过1MB，因此，我们只要能够有两个版本代码的diff的数据，应该就可以以极低的代价更新程序了。因此，Larry Wall开发了一个工具：patch。它可以根据一个diff文件进行版本更新。</p>
+<h3 id="diff-和format-patch的比较："><a href="#diff-和format-patch的比较：" class="headerlink" title="diff 和format-patch的比较："></a>diff 和format-patch的比较：</h3><ul>
+<li>兼容性：很明显，git diff生成的Patch兼容性强。如果你在修改的代码的官方版本库不是Git管理的版本库，那么你必须使用git diff生成的patch才能让你的代码被项目的维护人接受。</li>
+<li>除错功能：对于git diff生成的patch，你可以用git apply –check 查看补丁是否能够干净顺利地应用到当前分支中；如果git format-patch 生成的补丁不能打到当前分支，git am会给出提示，并协助你完成打补丁工作，你也可以使用git am -3进行三方合并，详细的做法可以参考git手册或者《Progit》。从这一点上看，两者除错功能都很强。</li>
+<li>版本库信息：由于git format-patch生成的补丁中含有这个补丁开发者的名字，因此在应用补丁时，这个名字会被记录进版本库，显然，这样做是恰当的。因此，目前使用Git的开源社区往往建议大家使用format-patch生成补丁。</li>
+</ul>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/git/" rel="tag"># git</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/01/13/jvm-source-code/" rel="next" title="2019-01-13-jvm-source-code">
+                <i class="fa fa-chevron-left"></i> 2019-01-13-jvm-source-code
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/01/18/jvm-class-loader/" rel="prev" title="Java Class Loader">
+                Java Class Loader <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100" alt="盗梦的虎猫">
+            
+              <p class="site-author-name" itemprop="name">盗梦的虎猫</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives">
+                
+                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  <a href="/categories/index.html">
+                    
+                    
+                      
+                    
+                    <span class="site-state-item-count">1</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#图说git"><span class="nav-number">1.</span> <span class="nav-text">图说git</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交互式暂存"><span class="nav-number">2.</span> <span class="nav-text">交互式暂存</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用交互模式的价值"><span class="nav-number">2.1.</span> <span class="nav-text">使用交互模式的价值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#交互模式"><span class="nav-number">2.2.</span> <span class="nav-text">交互模式</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Git-Command"><span class="nav-number">3.</span> <span class="nav-text">Git Command</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#add"><span class="nav-number">3.1.</span> <span class="nav-text">add</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#add-patch"><span class="nav-number">3.1.1.</span> <span class="nav-text">add --patch</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#一个小栗子"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">一个小栗子</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#push"><span class="nav-number">3.2.</span> <span class="nav-text">push</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#清空指定远端分支"><span class="nav-number">3.2.1.</span> <span class="nav-text">清空指定远端分支</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#推送所有本地分支"><span class="nav-number">3.2.2.</span> <span class="nav-text">推送所有本地分支</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#强制推送"><span class="nav-number">3.2.3.</span> <span class="nav-text">强制推送</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#push-的-simple-和-matching-方式"><span class="nav-number">3.2.4.</span> <span class="nav-text">push 的 simple 和 matching 方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#fork"><span class="nav-number">3.3.</span> <span class="nav-text">fork</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#保持与源项目的更新"><span class="nav-number">3.3.1.</span> <span class="nav-text">保持与源项目的更新</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#submodule"><span class="nav-number">3.4.</span> <span class="nav-text">submodule</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#添加子仓库"><span class="nav-number">3.4.1.</span> <span class="nav-text">添加子仓库</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">新建一个父仓库main，一个子仓库sub。将父仓库克隆到本地。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#进入父仓库，并添加子仓库"><span class="nav-number">3.4.1.2.</span> <span class="nav-text">进入父仓库，并添加子仓库</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#添加成功后，父仓库根目录会新增-gitmodule文件。"><span class="nav-number">3.4.1.2.1.</span> <span class="nav-text">添加成功后，父仓库根目录会新增.gitmodule文件。</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#检出包含subModule的项目"><span class="nav-number">3.4.2.</span> <span class="nav-text">检出包含subModule的项目</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#删除子仓库"><span class="nav-number">3.4.3.</span> <span class="nav-text">删除子仓库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#stash"><span class="nav-number">3.5.</span> <span class="nav-text">stash</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#stash-常用指令"><span class="nav-number">3.5.1.</span> <span class="nav-text">stash 常用指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stash-使用方式"><span class="nav-number">3.5.2.</span> <span class="nav-text">stash 使用方式</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Pulling-into-a-dirty-tree"><span class="nav-number">3.5.2.1.</span> <span class="nav-text">Pulling into a dirty tree</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#工作流中断-Interrupted-workflow"><span class="nav-number">3.5.2.2.</span> <span class="nav-text">工作流中断(Interrupted workflow)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#从储藏中创建分支"><span class="nav-number">3.5.2.3.</span> <span class="nav-text">从储藏中创建分支</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Testing-partial-commits"><span class="nav-number">3.5.2.4.</span> <span class="nav-text">Testing partial commits</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cherry-pick"><span class="nav-number">3.6.</span> <span class="nav-text">cherry-pick</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#cherry-pick-实战"><span class="nav-number">3.6.1.</span> <span class="nav-text">cherry-pick 实战</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#format-patch"><span class="nav-number">3.7.</span> <span class="nav-text">format-patch</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#什么是-patch"><span class="nav-number">3.7.1.</span> <span class="nav-text">什么是 patch</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#diff-和format-patch的比较："><span class="nav-number">3.7.2.</span> <span class="nav-text">diff 和format-patch的比较：</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2016 – <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">盗梦的虎猫</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">Powered by <span class="exturl theme-link" data-url="aHR0cHM6Ly9oZXhvLmlv">Hexo</span> v3.9.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v6.7.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/src/utils.js?v=6.7.0"></script>
+
+  <script src="/js/src/motion.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/src/affix.js?v=6.7.0"></script>
+
+  <script src="/js/src/schemes/pisces.js?v=6.7.0"></script>
+
+
+
+
+  
+  <script src="/js/src/scrollspy.js?v=6.7.0"></script>
+<script src="/js/src/post-details.js?v=6.7.0"></script>
+
+
+
+  
+
+
+  <script src="/js/src/bootstrap.js?v=6.7.0"></script>
+
+
+
+  
+  
+
+
+
+
+
+  
+
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  <script src="/js/src/exturl.js?v=6.7.0"></script>
+
+
+  
+
+  
+  <style>
+    .copy-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 20px;
+      color: #333;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: #eee;
+      background-image: linear-gradient(#fcfcfc, #eee);
+      border: 1px solid #d5d5d5;
+      border-radius: 3px;
+      user-select: none;
+      outline: 0;
+    }
+
+    .highlight-wrap .copy-btn {
+      transition: opacity .3s ease-in-out;
+      opacity: 0;
+      padding: 2px 6px;
+      position: absolute;
+      right: 4px;
+      top: 8px;
+    }
+
+    .highlight-wrap:hover .copy-btn,
+    .highlight-wrap .copy-btn:focus {
+      opacity: 1
+    }
+
+    .highlight-wrap {
+      position: relative;
+    }
+  </style>
+  <script>
+    $('.highlight').each(function (i, e) {
+      var $wrap = $('<div>').addClass('highlight-wrap');
+      $(e).after($wrap);
+      $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function (e) {
+        var code = $(this).parent().find('.code').find('.line').map(function (i, e) {
+          return $(e).text();
+        }).toArray().join('\n');
+        var ta = document.createElement('textarea');
+        var range = document.createRange(); //For Chrome
+        var sel = window.getSelection(); //For Chrome
+        var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+        ta.style.top = yPosition + 'px'; //Prevent page scroll
+        ta.style.position = 'absolute';
+        ta.style.opacity = '0';
+        ta.value = code;
+        ta.textContent = code; //For FireFox
+        ta.contentEditable = true;
+        ta.readOnly = false;
+        document.body.appendChild(ta);
+        range.selectNode(ta);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        ta.setSelectionRange(0, code.length);
+        var result = document.execCommand('copy');
+        
+          if (result) $(this).text('Copied');
+          else $(this).text('Copy failed');
+        
+        ta.blur(); //For iOS
+        $(this).blur();
+      })).on('mouseleave', function (e) {
+        var $b = $(this).find('.copy-btn');
+        setTimeout(function () {
+          $b.text('Copy');
+        }, 300);
+      }).append(e);
+    })
+  </script><!-- hexo-inject:begin --><!-- Begin: Injected MathJax -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({"tex2jax":{"inlineMath":[["$","$"],["\\(","\\)"]],"skipTags":["script","noscript","style","textarea","pre","code"],"processEscapes":true},"TeX":{"equationNumbers":{"autoNumber":"AMS"}}});
+</script>
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Queue(function() {
+    var all = MathJax.Hub.getAllJax(), i;
+    for(i=0; i < all.length; i += 1) {
+      all[i].SourceElement().parentNode.className += ' has-jax';
+    }
+  });
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js">
+</script>
+<!-- End: Injected MathJax -->
+<!-- hexo-inject:end -->
+
+
+  
+
+</body>
+</html>
