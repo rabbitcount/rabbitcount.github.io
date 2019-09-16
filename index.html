@@ -1341,6 +1341,171 @@ smpSMP （Symmetric Multiprocessing） , 对称多处理器. 顾名思义, 在SM
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/05/15/jdk-contended/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="盗梦的虎猫">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="盗梦 de 虎猫">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/05/15/jdk-contended/" class="post-title-link" itemprop="url">伪共享 与 @Contended</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-05-15 17:21:16" itemprop="dateCreated datePublished" datetime="2019-05-15T17:21:16+08:00">2019-05-15</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2019-09-16 19:28:08" itemprop="dateModified" datetime="2019-09-16T19:28:08+08:00">2019-09-16</time>
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>
+              伪共享 与 @ContendedJava8使用@sun.misc.Contended避免伪共享
+什么是伪共享缓存系统中是以缓存行（cache line）为单位存储的。缓存行是2的整数幂个连续字节，一般为32-256个字节。最常见的缓存行大小是64个字节。当多线程修改互相独立的变量时，如果这些变量共享
+              ...
+            </p>
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/2019/05/15/jdk-contended/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/05/15/disruptor/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1818,170 +1983,6 @@ smpSMP （Symmetric Multiprocessing） , 对称多处理器. 顾名思义, 在SM
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://wiki.anocelot.cn/2019/02/28/narration-of-service-mesh/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="盗梦的虎猫">
-      <meta itemprop="description" content>
-      <meta itemprop="image" content="https://avatars1.githubusercontent.com/u/3364273?v=3&u=ce716f2b74223dc0e4d236c952aa946ce33b4c4b&s=100">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="盗梦 de 虎猫">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2019/02/28/narration-of-service-mesh/" class="post-title-link" itemprop="url">2019-02-28-narration-of-service-mesh</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
-
-              <time title="Created: 2019-02-28 10:42:58" itemprop="dateCreated datePublished" datetime="2019-02-28T10:42:58+08:00">2019-02-28</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2019-07-18 16:17:40" itemprop="dateModified" datetime="2019-07-18T16:17:40+08:00">2019-07-18</time>
-              
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>
-              服务治理Service Mesh解决系统架构微服务化后的服务间通信和治理问题；适用场景：大规模部署微服务（微服务数&gt;1000）、内部服务异构程度高(交互协议/开发语言类型&gt;5)的场景；第一代：Linkerd 和 Envoy；第二代：Istio 和 Conduit；主要改进集中在更加强大的
-              ...
-            </p>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2019/02/28/narration-of-service-mesh/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2031,7 +2032,7 @@ smpSMP （Symmetric Multiprocessing） , 对称多处理器. 顾名思义, 在SM
                 
                   <a href="/archives">
                 
-                    <span class="site-state-item-count">78</span>
+                    <span class="site-state-item-count">79</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -2243,7 +2244,9 @@ smpSMP （Symmetric Multiprocessing） , 对称多处理器. 顾名思义, 在SM
                     
                       
                     
-                    <span class="site-state-item-count">92</span>
+                      
+                    
+                    <span class="site-state-item-count">93</span>
                     <span class="site-state-item-name">tags</span>
                   </a>
                 </div>
