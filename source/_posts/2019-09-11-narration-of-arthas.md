@@ -18,35 +18,34 @@ GitHub地址： [https://github.com/alibaba/arthas/](https://github.com/alibaba/
 
 arthas有多个模块组成，如下图所示：
 
-![](https://upload-images.jianshu.io/upload_images/1324111-18a6654e4b1dcd08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/752/format/webp)
+![](https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-09-11-narration-of-arthas/arthas.png)
 
 arthas模块图.png
 
-1.  arthas\-boot.jar和as.sh模块功能类似，分别使用java和shell脚本，下载对应的jar包，并生成服务端和客户端的启动命令，然后启动客户端和服务端。服务端最终生成的启动命令如下：
+1.  **arthas\-boot.jar** 和 **as.sh** 
 
-```
-${JAVA_HOME}"/bin/java \
-     ${opts}  \
-     -jar "${arthas_lib_dir}/arthas-core.jar" \
-         -pid ${TARGET_PID} \             要注入的进程id
-         -target-ip ${TARGET_IP} \       服务器ip地址
-         -telnet-port ${TELNET_PORT} \  服务器telnet服务端口号
-         -http-port ${HTTP_PORT} \      websocket服务端口号
-         -core "${arthas_lib_dir}/arthas-core.jar" \      arthas-core目录
-         -agent "${arthas_lib_dir}/arthas-agent.jar"    arthas-agent目录
+    模块功能类似，分别使用java和shell脚本，下载对应的jar包（如 arthas\-core.jar 或 arthas\-agent.jar），并生成服务端和客户端的启动命令，然后启动客户端和服务端。
+2.  **arthas\-core.jar** 
 
-```
+    是服务端程序的启动入口类（入口main函数位于 `com.taobao.arthas.core.Arthas`），会调用`virtualMachine#attach`到目标进程，并加载arthas\-agent.jar作为agent jar包。
+3.  **arthas\-agent.jar**
+    - 既可以使用premain方式（**在目标进程启动之前，通过\-agent参数静态指定**）；
+    - 也可以通过agentmain方式（**在进程启动之后attach上去**）。
+   
+    arthas\-agent 会使用自定义的 classloader(`ArthasClassLoader`) 加载 arthas\-core.jar 里面的 `com.taobao.arthas.core.config.Configure` 类以及 `com.taobao.arthas.core.server.ArthasBootstrap`。 
+    同时程序运行的时候会使用arthas\-spy.jar。
+4.  **arthas\-spy.jar** 
 
-2.  arthas\-core.jar是服务端程序的启动入口类，会调用`virtualMachine#attach`到目标进程，并加载arthas\-agent.jar作为agent jar包。
-3.  arthas\-agent.jar既可以使用premain方式（在目标进程启动之前，通过\-agent参数静态指定），也可以通过agentmain方式（在进程启动之后attach上去）。arthas\-agent会使用自定义的classloader(`ArthasClassLoader`)加载arthas\-core.jar里面的`com.taobao.arthas.core.config.Configure`类以及`com.taobao.arthas.core.server.ArthasBootstrap`。 同时程序运行的时候会使用arthas\-spy.jar。
-4.  arthas\-spy.jar里面只包含Spy类，目的是为了将Spy类使用`BootstrapClassLoader`来加载，从而使目标进程的java应用可以访问Spy类。通过ASM修改字节码，可以将Spy类的方法`ON_BEFORE_METHOD`， `ON_RETURN_METHOD`等编织到目标类里面。Spy类你可以简单理解为类似spring aop的Advice，有前置方法，后置方法等。
-5.  arthas\-client.jar是客户端程序，用来连接arthas\-core.jar启动的服务端代码，使用telnet方式。一般由arthas\-boot.jar和as.sh来负责启动。
+    只包含 Spy 类，目的是为了将 Spy 类使用 `BootstrapClassLoader` 来加载，从而使目标进程的 java 应用可以访问 Spy 类。通过 ASM 修改字节码，可以将 Spy 类的方法`ON_BEFORE_METHOD`， `ON_RETURN_METHOD`等编织到目标类里面。Spy类你可以简单理解为类似spring aop的Advice，有前置方法，后置方法等。
+5.  **arthas\-client.jar** 
+
+    客户端程序（入口类 `com.taobao.arthas.client.TelnetConsole`），用来连接arthas\-core.jar启动的服务端代码，使用 telnet 方式。一般由 arthas\-boot.jar 和 as.sh 来负责启动。
 
 # arthas服务端代码分析
 
 ## 前置准备
 
-看服务端启动命令可以知道 从 arthas\-core.jar开始启动，arthas\-core的pom.xml文件里面指定了mainClass为`com.taobao.arthas.core.Arthas`，使得程序启动的时候从该类的main方法开始运行。Arthas源码如下：
+看服务端启动命令可以知道 从 arthas\-core.jar开始启动，arthas\-core 的 pom.xml 文件里面指定了 mainClass 为 `com.taobao.arthas.core.Arthas` ，使得程序启动的时候从该类的 main 方法开始运行。Arthas源码如下：
 
 ```
 public class Arthas {
@@ -74,108 +73,110 @@ public class Arthas {
 
 ```
 
-1.  Arthas首先解析入参，生成`com.taobao.arthas.core.config.Configure`类，包含了相关配置信息
-2.  使用jdk\-tools里面的`VirtualMachine.loadAgent`，其中第一个参数为agent路径， 第二个参数向jar包中的agentmain()方法传递参数（此处为agent\-core.jar包路径和config序列化之后的字符串），加载arthas\-agent.jar包，并运行
+1.  Arthas首先解析入参，生成`com.taobao.arthas.core.config.Configure`类；
+`Configure` 包含了相关配置信息；
+2.  使用jdk\-tools里面的`VirtualMachine.loadAgent`；
+    - 第一个参数为agent路径；
+    - 第二个参数向jar包中的agentmain()方法传递参数（此处为agent\-core.jar包路径和config序列化之后的字符串）；
+
+    加载arthas\-agent.jar包，并运行
 3.  arthas\-agent.jar包，指定了Agent\-Class为`com.taobao.arthas.agent.AgentBootstrap`，同时可以使用Premain的方式和目标进程同时启动
 
-```
-<manifestEntries>
-    <Premain-Class>com.taobao.arthas.agent.AgentBootstrap</Premain-Class>
-    <Agent-Class>com.taobao.arthas.agent.AgentBootstrap</Agent-Class>
-</manifestEntries>
+    ```
+    <manifestEntries>
+        <Premain-Class>com.taobao.arthas.agent.AgentBootstrap</Premain-Class>
+        <Agent-Class>com.taobao.arthas.agent.AgentBootstrap</Agent-Class>
+    </manifestEntries>
+    
+    ```
 
-```
-
-其中`Premain-Class`的`premain`和`Agent-Class`的`agentmain`都调用main方法。
+其中 `Premain-Class` 的 `premain` 和 `Agent-Class` 的 `agentmain` 都调用main方法。
 main方法主要做4件事情：
 
-1.  找到arthas\-spy.jar路径，并调用`Instrumentation#appendToBootstrapClassLoaderSearch`方法，使用`bootstrapClassLoader`来加载arthas\-spy.jar里的Spy类。
-2.  arthas\-agent路径传递给自定义的classloader(`ArthasClassloader`)，用来隔离arthas本身的类和目标进程的类。
-3.  使用 `ArthasClassloader#loadClass`方法，加载`com.taobao.arthas.core.advisor.AdviceWeaver`类，并将里面的`methodOnBegin`、`methodOnReturnEnd`、`methodOnThrowingEnd`等方法取出赋值给Spy类对应的方法。同时Spy类里面的方法又会通过ASM字节码增强的方式，编织到目标代码的方法里面。使得Spy 间谍类可以关联由`AppClassLoader`加载的目标进程的业务类和`ArthasClassloader`加载的arthas类，因此Spy类可以看做两者之间的桥梁。根据classloader双亲委派特性，子classloader可以访问父classloader加载的类。源码如下：
-
-```
-    private static ClassLoader getClassLoader(Instrumentation inst, File spyJarFile, File agentJarFile) throws Throwable {
-        // 将Spy添加到BootstrapClassLoader
-        inst.appendToBootstrapClassLoaderSearch(new JarFile(spyJarFile));
-
-        // 构造自定义的类加载器ArthasClassloader，尽量减少Arthas对现有工程的侵蚀
-        return loadOrDefineClassLoader(agentJarFile);
-    }
-
-    private static void initSpy(ClassLoader classLoader) throws ClassNotFoundException, NoSuchMethodException {
-        // 该classLoader为ArthasClassloader
-        Class<?> adviceWeaverClass = classLoader.loadClass(ADVICEWEAVER);
-        Method onBefore = adviceWeaverClass.getMethod(ON_BEFORE, int.class, ClassLoader.class, String.class,
-                String.class, String.class, Object.class, Object[].class);
-        Method onReturn = adviceWeaverClass.getMethod(ON_RETURN, Object.class);
-        Method onThrows = adviceWeaverClass.getMethod(ON_THROWS, Throwable.class);
-        Method beforeInvoke = adviceWeaverClass.getMethod(BEFORE_INVOKE, int.class, String.class, String.class, String.class);
-        Method afterInvoke = adviceWeaverClass.getMethod(AFTER_INVOKE, int.class, String.class, String.class, String.class);
-        Method throwInvoke = adviceWeaverClass.getMethod(THROW_INVOKE, int.class, String.class, String.class, String.class);
-        Method reset = AgentBootstrap.class.getMethod(RESET);
-        Spy.initForAgentLauncher(classLoader, onBefore, onReturn, onThrows, beforeInvoke, afterInvoke, throwInvoke, reset);
-    }
-
-```
-
-classloader关系如下：
-
-```
-+-BootstrapClassLoader
-+-sun.misc.Launcher$ExtClassLoader@7bf2dede
-  +-com.taobao.arthas.agent.ArthasClassloader@51a10fc8
-  +-sun.misc.Launcher$AppClassLoader@18b4aac2
-
-```
-
-4.  异步调用bind方法，该方法最终启动server监听线程，监听客户端的连接，包括telnet和websocket两种通信方式。源码如下：
-
-```
-    Thread bindingThread = new Thread() {
-        @Override
-        public void run() {
-            try {
-                bind(inst, agentLoader, agentArgs);
-            } catch (Throwable throwable) {
-                throwable.printStackTrace(ps);
-            }
+1.  找到 arthas\-spy.jar 路径，并调用 `Instrumentation#appendToBootstrapClassLoaderSearch` 方法，使用 `bootstrapClassLoader` 来加载 arthas\-spy.jar 里的 Spy 类。
+2.  arthas\-agent 路径传递给自定义的 classloader(`ArthasClassloader`) ，用来隔离 arthas 本身的类和目标进程的类。
+3.  使用 `ArthasClassloader#loadClass` 方法，加载 `com.taobao.arthas.core.advisor.AdviceWeaver` 类，并将里面的 `methodOnBegin`、`methodOnReturnEnd`、`methodOnThrowingEnd` 等方法取出赋值给 Spy 类对应的方法。同时 Spy 类里面的方法又会通过 ASM 字节码增强的方式，编织到目标代码的方法里面。使得 Spy  间谍类可以关联由 `AppClassLoader` 加载的目标进程的业务类和 `ArthasClassloader` 加载的 arthas 类，因此 Spy 类可以看做两者之间的桥梁。根据 classloader 双亲委派特性，子 classloader 可以访问父 classloader 加载的类。源码如下：
+    ```
+        private static ClassLoader getClassLoader(Instrumentation inst, File spyJarFile, File agentJarFile) throws Throwable {
+            // 将Spy添加到BootstrapClassLoader
+            inst.appendToBootstrapClassLoaderSearch(new JarFile(spyJarFile));
+    
+            // 构造自定义的类加载器ArthasClassloader，尽量减少Arthas对现有工程的侵蚀
+            return loadOrDefineClassLoader(agentJarFile);
         }
-    };
+    
+        private static void initSpy(ClassLoader classLoader) throws ClassNotFoundException, NoSuchMethodException {
+            // 该classLoader为ArthasClassloader
+            Class<?> adviceWeaverClass = classLoader.loadClass(ADVICEWEAVER);
+            Method onBefore = adviceWeaverClass.getMethod(ON_BEFORE, int.class, ClassLoader.class, String.class,
+                    String.class, String.class, Object.class, Object[].class);
+            Method onReturn = adviceWeaverClass.getMethod(ON_RETURN, Object.class);
+            Method onThrows = adviceWeaverClass.getMethod(ON_THROWS, Throwable.class);
+            Method beforeInvoke = adviceWeaverClass.getMethod(BEFORE_INVOint int.class, String.class, String.class, String.class);
+           adviceWeaverClass.getMethod(AFTER_INVOKE,   int.class, Str int  int.class, String.class, String.class, String.class);
+            Method throwInvoke = adviceWeaverClass.getMethod(THROW_INVOKE, int.class, String.class, String.class, String.class);
+            Method reset = AgentBootstrap.class.getMethod(RESET);
+            Spy.initFoitFoitFotFooooorAgentLauncher(classLoader, onBefore, onReturn, IInvoke, afterInvoke, throwInvoke, reset);
+        }
+    
+    ```
+    
+    classloader关系如下：
+    
+    ```
+    +-BootstrapClassLoader
+    +-sun.misc.Launcher$ExtClassLoader@7bf2dede
+      +-com.taobao.arthas.agent.ArhasClassloader@51a10fc8
+      +-sun.misc.Lauuncher$AppClassLoader@18b4aac2
+    
+    ```
 
-    private static void bind(Instrumentation inst, ClassLoader agentLoader, String args) throws Throwable {
-            /**
-            * <pre>
-            * Configure configure = Configure.toConfigure(args);
-            * int javaPid = configure.getJavaPid();
-            * ArthasBootstrap bootstrap = ArthasBootstrap.getInstance(javaPid, inst);
-            * </pre>
-            */
-            Class<?> classOfConfigure = agentLoader.loadClass(ARTHAS_CONFIGURE);
-            Object configure = classOfConfigure.getMethod(TO_CONFIGURE, String.class).invoke(null, args);
-            int javaPid = (Integer) classOfConfigure.getMethod(GET_JAVA_PID).invoke(configure);
-            Class<?> bootstrapClass = agentLoader.loadClass(ARTHAS_BOOTSTRAP);
-            Object bootstrap = bootstrapClass.getMethod(GET_INSTANCE, int.class, Instrumentation.class).invoke(null, javaPid, inst);
-            boolean isBind = (Boolean) bootstrapClass.getMethod(IS_BIND).invoke(bootstrap);
-            if (!isBind) {
+4.  异步调用 bind 方法，该方法最终启动 server 监听线程，监听客户端的连接，包括 telnet 和 websocket 两种通信方式。源码如下：
+    ```java
+        Thread bindingThread = new Thread() {
+            @Override
+            public void run() {
                 try {
-                    ps.println("Arthas start to bind...");
-                    bootstrapClass.getMethod(BIND, classOfConfigure).invoke(bootstrap, configure);
-                    ps.println("Arthas server bind success.");
-                    return;
-                } catch (Exception e) {
-                    ps.println("Arthas server port binding failed! Please check $HOME/logs/arthas/arthas.log for more details.");
-                    throw e;
+                    bind(inst, agentLoader, agentArgs);
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace(ps);
                 }
             }
-            ps.println("Arthas server already bind.");
-        }
-
-```
-
-主要做两件事情：
-
-*   使用`ArthasClassloader`加载`com.taobao.arthas.core.config.Configure`类(位于arthas\-core.jar)，并将传递过来的序列化之后的config，反序列化成对应的`Configure`对象。
-*   使用`ArthasClassloader`加载`com.taobao.arthas.core.server.ArthasBootstrap`类（位于arthas\-core.jar），并调用`bind`方法。
+        };
+    
+        private static void bind(Instrumentation inst, ClassLoader agentLoader, String args) throws Throwable {
+                /**
+                * <pre>
+                * Configure configure = Configure.toConfigure(args);
+                * int javaPid = configure.getJavaPid();
+                * ArthasBootstrap bootstrap = ArthasBootstrap.getInstance(javaPid, inst);
+                * </pre>
+                */
+                Class<?> classOfConfigure = agentLoader.loadClass(ARTHAS_CONFIGURE);
+                Object configure = classOfConfigure.getMethod(TO_CONFIGURE, String.class).invoke(null, args);
+                int javaPid = (Integer) classOfConfigure.getMethod(GET_JAVA_PID).invoke(configure);
+                Class<?> bootstrapClass = agentLoader.lladClass(ARTHAS_BOOTSTRAP);
+                Object bootstrap = botratrapClass.getMethod(GET_INSTANCE, inCE, inCE, inE, in ininnstrumentation.class).invoke(null, javaPi          boolean isBind = (Boolean) bootstrapClass.getMethod(IS_BIND).invoke(bootstrap);
+                if (!isBind) {
+                    try {
+                        ps.println("Arthas start to bind...");
+                        bootstrapClass.getMethod(BIND, classOfConfigure).invoke(bootstrap, configure);
+                        ps.println("Arthas server bind success.");
+                        return;
+                    } catch (Exception e) {
+                        ps.println("Arthas server port binding failed! Please check $HOME/logs/arthas/arthas.log for more details.");
+                        throw e;
+                    }
+                }
+                ps.println("Arthas server already bind.");
+            }
+    
+    ```
+    
+    主要做两件事情：
+    
+    *   使用`ArthasClassloader`加载`com.taobao.arthas.core.config.Configure`类(位于arthas\-core.jar)，并将传递过来的序列化之后的config，反序列化成对应的`Configure`对象。
+    *   使用`ArthasClassloader`加载`com.taobao.arthas.core.server.ArthasBootstrap`类（位于arthas\-core.jar），并调用`bind`方法。
 
 ## 启动服务器，并监听客户端请求
 
@@ -215,8 +216,8 @@ classloader关系如下：
             }
             if (configure.getHttpPort() > 0) {
                 // websocket方式的server
-                shellServer.registerTermServer(new HttpTermServer(configure.getIp(), configure.getHttpPort(),
-                                options.getConnectionTimeout()));
+                shellServer.registerTermServer(new HttpTermServer(onfigure.getIp(), configure.getHttpPort(),
+                                 options.getConnectionTimeout()));
             } else {
                 logger.info("http port is {}, skip bind http server.", configure.getHttpPort());
             }
@@ -277,8 +278,8 @@ public class BuiltinCommandPack implements CommandResolver {
         commands.add(Command.create(JvmCommand.class));
         // commands.add(Command.create(GroovyScriptCommand.class));
         commands.add(Command.create(OgnlCommand.class));
-        commands.add(Command.create(DashboardCommand.class));
-        commands.add(Command.create(DumpClassCommand.class));
+        commands.add(Command.create(DashboadCommand.class));
+        commands.add(Command.create(DumpClassCCommand.class));
         commands.add(Command.create(JulyCommand.class));
         commands.add(Command.create(ThanksCommand.class));
         commands.add(Command.create(OptionsCommand.class));
