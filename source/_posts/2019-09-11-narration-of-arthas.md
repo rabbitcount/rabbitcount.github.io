@@ -90,12 +90,12 @@ public class Arthas {
     
     ```
 
-其中 `Premain-Class` 的 `premain` 和 `Agent-Class` 的 `agentmain` 都调用main方法。
-main方法主要做4件事情：
-
-1.  找到 arthas\-spy.jar 路径，并调用 `Instrumentation#appendToBootstrapClassLoaderSearch` 方法，使用 `bootstrapClassLoader` 来加载 arthas\-spy.jar 里的 Spy 类。
-2.  arthas\-agent 路径传递给自定义的 classloader(`ArthasClassloader`) ，用来隔离 arthas 本身的类和目标进程的类。
-3.  使用 `ArthasClassloader#loadClass` 方法，加载 `com.taobao.arthas.core.advisor.AdviceWeaver` 类，并将里面的 `methodOnBegin`、`methodOnReturnEnd`、`methodOnThrowingEnd` 等方法取出赋值给 Spy 类对应的方法。同时 Spy 类里面的方法又会通过 ASM 字节码增强的方式，编织到目标代码的方法里面。使得 Spy  间谍类可以关联由 `AppClassLoader` 加载的目标进程的业务类和 `ArthasClassloader` 加载的 arthas 类，因此 Spy 类可以看做两者之间的桥梁。根据 classloader 双亲委派特性，子 classloader 可以访问父 classloader 加载的类。源码如下：
+    其中 `Premain-Class` 的 `premain` 和 `Agent-Class` 的 `agentmain` 都调用main方法。
+    `AgentBootstrap` 的 main方法主要做4件事情：
+    
+    1.  找到 arthas\-spy.jar 路径，并调用 `Instrumentation#appendToBootstrapClassLoaderSearch` 方法，使用 `bootstrapClassLoader` 来加载 arthas\-spy.jar 里的 Spy 类。
+    2.  arthas\-agent 路径传递给自定义的 classloader(`ArthasClassloader`) ，用来隔离 arthas 本身的类和目标进程的类。
+    3.  `loadOrDefineClassLoader` 方法使用 `ArthasClassloader#loadClass` 方法，加载 `com.taobao.arthas.core.advisor.AdviceWeaver` 类，并将里面的 `methodOnBegin`、`methodOnReturnEnd`、`methodOnThrowingEnd` 等方法取出赋值给 Spy 类对应的方法。同时 Spy 类里面的方法又会通过 ASM 字节码增强的方式，编织到目标代码的方法里面。使得 Spy  间谍类可以关联由 `AppClassLoader` 加载的目标进程的业务类和 `ArthasClassloader` 加载的 arthas 类，因此 Spy 类可以看做两者之间的桥梁。根据 classloader 双亲委派特性，子 classloader 可以访问父 classloader 加载的类。源码如下：
     ```
         private static ClassLoader getClassLoader(Instrumentation inst, File spyJarFile, File agentJarFile) throws Throwable {
             // 将Spy添加到BootstrapClassLoader
@@ -126,8 +126,8 @@ main方法主要做4件事情：
     ```
     +-BootstrapClassLoader
     +-sun.misc.Launcher$ExtClassLoader@7bf2dede
-      +-com.taobao.arthas.agent.ArhasClassloader@51a10fc8
-      +-sun.misc.Lauuncher$AppClassLoader@18b4aac2
+      +-coooClassloader@51a10fc8
+      +-sun.misc.Lau.Lauuncher$AppClassLo.Lauuncher$AppClassLoader@18b4aac2
     
     ```
 
@@ -154,8 +154,8 @@ main方法主要做4件事情：
                 */
                 Class<?> classOfConfigure = agentLoader.loadClass(ARTHAS_CONFIGURE);
                 Object configure = classOfConfigure.getMethod(TO_CONFIGURE, String.class).invoke(null, args);
-                int javaPid = (Integer) classOfConfigure.getMethod(GET_JAVA_PID).invoke(configure);
-                Class<?> bootstrapClass = agentLoader.lladClass(ARTHAS_BOOTSTRAP);
+                int javaPid = (Integer) classOfConfigure.getMethod(GPID).invoke(configure);
+                Class<?> bootstraaapClasapClass = agentLoader.lladClass(ARTHAS_BOOTSTRAP);
                 Object bootstrap = botratrapClass.getMethod(GET_INSTANCE, inCE, inCE, inE, in ininnstrumentation.class).invoke(null, javaPi          boolean isBind = (Boolean) bootstrapClass.getMethod(IS_BIND).invoke(bootstrap);
                 if (!isBind) {
                     try {
