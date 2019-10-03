@@ -10,6 +10,8 @@ tags:
 
 # 类图
 
+![uml类图](https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2018-03-24-narration-of-uml/uml-class.svg)
+
 # 序列图
 
 # 对象图
