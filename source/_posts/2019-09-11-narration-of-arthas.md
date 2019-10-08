@@ -291,7 +291,6 @@ public class BuiltinCommandPack implements CommandResolver {
 调用`shellServer.registerTermServer`，`shellServer.registerTermServer`，`shellServer.registerCommandResolve` 注册到`ShellServer`里；
 `ShellServer`是整个服务端的门面类，调用`listen`方法启动`ShellServer`。
 
-![Arthas-服务端类图.png](https://upload-images.jianshu.io/upload_images/1324111-126a2a2d6faddb65.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/906/format/webp)
 
 `ShellServer#listen`会调用所有注册的`TermServer的listen`方法，比如`TelnetTermServer`。然后`TelnetTermServer`的`listen`方法会注册一个回调类，该回调类在有新的客户端连接时会调用`TermServerTermHandler`的`handle`方法处理。
 
@@ -330,7 +329,7 @@ public void readline(String prompt, Handler<String> lineHandler, Handler<Complet
 
 1. 如果是 exit, logout, quit, jobs, fg, bg, kill 等直接执行。
 2. 如果是其他的命令，则创建Job，并运行。创建Job的类图如下：
-![服务端-创建job类图.png](https://upload-images.jianshu.io/upload_images/1324111-8d234fd5c43829c6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/903/format/webp)
+![Arthas createJob](https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-09-11-narration-of-arthas/ShellLinkeHandlerCreateJob.png)
 3. 创建 `Job` 时，会根据具体客户端传递的命令，找到对应的 `Command` ，并包装成 `Process` , `Process` 再被包装成Job。
 4. 运行 `Job` 时，反向先调用`Process`，再找到对应的 `Command` ，最终调用 `Command` 的 `process` 处理请求。
 
@@ -341,7 +340,7 @@ public void readline(String prompt, Handler<String> lineHandler, Handler<Complet
 - 不需要使用字节码增强的命令
 其中JVM相关的使用 `java.lang.management` 提供的管理接口，来查看具体的运行时数据。
 - 需要使用字节码增强的命令
-![arthas-command相关类图.png](https://upload-images.jianshu.io/upload_images/1324111-d1f5781d49aecef0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1000/format/webp)
+![arthas command asm](https://wiki-1258407249.cos.ap-chengdu.myqcloud.com/2019-09-11-narration-of-arthas/arthas-asm.png)
 
 ### 字节码增强的 Command
 字节码增强的命令统一继承`EnhancerCommand`类；
